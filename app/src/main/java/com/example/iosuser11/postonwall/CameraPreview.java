@@ -1,9 +1,12 @@
 package com.example.iosuser11.postonwall;
 
+import android.app.ActionBar;
 import android.content.Context;
 import android.hardware.Camera;
+import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.ViewGroup;
 
 import java.io.IOException;
 
@@ -17,12 +20,20 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
     public CameraPreview(Context context) {
         super(context);
+        initCamera();
+        this.setLayoutParams(new ViewGroup.LayoutParams(camera.getParameters().getPreviewSize().height, camera.getParameters().getPreviewSize().width));
+        holder = getHolder();
+        holder.addCallback(this);
     }
 
     @Override
     public void surfaceCreated(SurfaceHolder surfaceHolder) {
-        holder = getHolder();
-        holder.addCallback(this);
+        try {
+            camera.setPreviewDisplay(holder);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        camera.startPreview();
     }
 
     @Override
@@ -44,13 +55,10 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         camera.release();
     }
 
-    void init() {
-        camera = Camera.open();
-        try {
-            camera.setPreviewDisplay(holder);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        camera.startPreview();
+    void initCamera() {
+            camera = Camera.open();
+            camera.setPreviewCallback(this);
+            camera.setDisplayOrientation(90);
+//
     }
 }
