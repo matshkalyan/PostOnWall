@@ -36,7 +36,7 @@ public class GRVCoordinates implements SensorEventListener {
     public float getZ (){return values[2];}
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
-        if (sensorEvent.sensor.getType() != Sensor.TYPE_GAME_ROTATION_VECTOR) {
+        if (sensorEvent.sensor.getType() != Sensor.TYPE_GAME_ROTATION_VECTOR||sensorEvent.sensor.getType() != Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR) {
             return;
         }
         else {
