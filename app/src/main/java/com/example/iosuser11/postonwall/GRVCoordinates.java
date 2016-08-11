@@ -23,10 +23,9 @@ public class GRVCoordinates implements SensorEventListener {
         if(activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_GYROSCOPE))
             mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR);
         else
-            mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR);
+            //tio use alternative compass +orientation
         mSensorManager.registerListener(this, mSensor, SensorManager.SENSOR_DELAY_GAME);
     }
-
 
     public float[] getValues() {
         return values;

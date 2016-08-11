@@ -10,6 +10,8 @@ import android.util.Log;
 import android.view.Window;
 import android.widget.RelativeLayout;
 
+import org.opencv.android.OpenCVLoader;
+
 /**
  * Created by iosuser11 on 8/10/16.
  */
@@ -24,6 +26,12 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.activity_main);
+
+        if(!OpenCVLoader.initDebug()){
+            Log.d("ONCREATE", "OpenCV not loaded");
+        } else {
+            Log.d("ONCREATE", "OpenCV loaded");
+        }
 
         int permissionCheck = ContextCompat.checkSelfPermission(this,
                 Manifest.permission.CAMERA);
