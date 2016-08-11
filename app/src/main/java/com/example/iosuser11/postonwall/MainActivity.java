@@ -9,6 +9,7 @@ import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.Window;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 import org.opencv.android.OpenCVLoader;
 
@@ -20,6 +21,7 @@ public class MainActivity extends Activity {
     PicturePreview pictureView;
     RelativeLayout wallView;
     private boolean afterOnPause;
+    TextView messeges;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,10 +44,12 @@ public class MainActivity extends Activity {
         }
 
         afterOnPause = false;
+        messeges = (TextView)findViewById(R.id.messeges);
         wallView = (RelativeLayout)findViewById(R.id.wallView);
         cameraPreview = new CameraPreview(getApplicationContext());
+        pictureView = new PicturePreview(getApplicationContext());
         wallView.addView(cameraPreview);
-
+        wallView.addView(pictureView);
     }
 
     @Override

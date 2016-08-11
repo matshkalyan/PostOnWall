@@ -61,6 +61,11 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         camera = Camera.open();
         Camera.Parameters params;
         params = camera.getParameters();
+//        for (Camera.Size size : params.getSupportedPreviewSizes()) {
+//            if (size.width * size.height < params.getPreviewSize().width * params.getPreviewSize().height) {
+//                params.setPreviewSize(size.width, size.height);
+//            }
+//        }
         params.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
         camera.setParameters(params);
         camera.setPreviewCallback(this);
