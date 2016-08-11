@@ -9,6 +9,7 @@ import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.Window;
 import android.widget.RelativeLayout;
+import android.widget.Toast;
 
 import org.opencv.android.OpenCVLoader;
 
@@ -20,6 +21,8 @@ public class MainActivity extends Activity {
     PicturePreview pictureView;
     RelativeLayout wallView;
     private boolean afterOnPause;
+    private boolean cameraPermissionGranted = false;
+    private boolean gpsPermissionGranted = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,34 +36,93 @@ public class MainActivity extends Activity {
             Log.d("ONCREATE", "OpenCV loaded");
         }
 
-        int permissionCheck = ContextCompat.checkSelfPermission(this,
-                Manifest.permission.CAMERA);
-        if(permissionCheck == PackageManager.PERMISSION_GRANTED){
-        }
-        else if(permissionCheck == PackageManager.PERMISSION_DENIED){
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 1);
-        }
+
 
         afterOnPause = false;
         wallView = (RelativeLayout)findViewById(R.id.wallView);
-        cameraPreview = new CameraPreview(getApplicationContext());
-        pictureView = new PicturePreview(getApplicationContext());
-        wallView.addView(cameraPreview);
-        wallView.addView(pictureView);
+        requestCameraPermission();
+//        requestGPSPermission();
 
     }
+    private void requestCameraPermission(){
+        int cameraPermissionCheck = ContextCompat.checkSelfPermission(this,
+                Manifest.permission.CAMERA);
 
+        if(cameraPermissionCheck == PackageManager.PERMISSION_GRANTED){
+            cameraPreview = new CameraPreview(getApplicationContext());
+            wallView.addView(cameraPreview);
+            cameraPermissionGranted = true;
+        }
+        else if(cameraPermissionCheck
+                != PackageManager.PERMISSION_GRANTED
+                ){
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 1);
+            cameraPermissionGranted = false;
+
+        }
+    }
+    //to be called in capture
+    private void requestGPSPermission(){
+        int gpsPermissionCheck = ContextCompat.checkSelfPermission(this,
+                Manifest.permission.CAMERA);
+
+        if(gpsPermissionCheck == PackageManager.PERMISSION_GRANTED){
+            //do the gps thing
+            gpsPermissionGranted = true;
+        }
+        else if(gpsPermissionCheck
+                != PackageManager.PERMISSION_GRANTED
+                ){
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+            gpsPermissionGranted = false;
+
+        }
+    }
     @Override
     protected void onResume() {
         super.onResume();
-        if(afterOnPause)
+        if(afterOnPause&&cameraPermissionGranted)
             cameraPreview.initCamera();
     }
+
 
     @Override
     protected void onPause() {
         super.onPause();
         afterOnPause = true;
+        if(cameraPermissionGranted)
         cameraPreview.pause();
     }
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case 1: {
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    cameraPreview = new CameraPreview(getApplicationContext());
+                    cameraPermissionGranted = true;
+                    wallView.addView(cameraPreview);
+                } else {
+                    Toast.makeText(getApplicationContext(),"We need the camera, BYE!", Toast.LENGTH_LONG).show();
+                    finish();
+                }
+                return;
+            }
+            case 2: {
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    //do gpsstuff here
+                    gpsPermissionGranted = true;
+                } else {
+                    Toast.makeText(getApplicationContext(),"We need the GPS, BYE!", Toast.LENGTH_LONG).show();
+                    finish();
+                }
+                return;
+            }
+        }
+    }
+
 }
