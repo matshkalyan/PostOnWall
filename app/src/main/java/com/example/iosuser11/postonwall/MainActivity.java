@@ -36,8 +36,6 @@ public class MainActivity extends Activity {
             Log.d("ONCREATE", "OpenCV loaded");
         }
 
-
-
         afterOnPause = false;
         wallView = (RelativeLayout)findViewById(R.id.wallView);
         requestCameraPermission();
@@ -52,19 +50,19 @@ public class MainActivity extends Activity {
             cameraPreview = new CameraPreview(getApplicationContext());
             wallView.addView(cameraPreview);
             cameraPermissionGranted = true;
+            requestGPSPermission();
         }
         else if(cameraPermissionCheck
                 != PackageManager.PERMISSION_GRANTED
                 ){
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 1);
             cameraPermissionGranted = false;
-
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 1);
         }
     }
-    //to be called in capture
+
     private void requestGPSPermission(){
         int gpsPermissionCheck = ContextCompat.checkSelfPermission(this,
-                Manifest.permission.CAMERA);
+                Manifest.permission.ACCESS_FINE_LOCATION);
 
         if(gpsPermissionCheck == PackageManager.PERMISSION_GRANTED){
             //do the gps thing
@@ -73,26 +71,27 @@ public class MainActivity extends Activity {
         else if(gpsPermissionCheck
                 != PackageManager.PERMISSION_GRANTED
                 ){
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
             gpsPermissionGranted = false;
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+
 
         }
     }
     @Override
     protected void onResume() {
         super.onResume();
-        if(afterOnPause&&cameraPermissionGranted)
+        if(afterOnPause && cameraPermissionGranted)
             cameraPreview.initCamera();
     }
-
 
     @Override
     protected void onPause() {
         super.onPause();
         afterOnPause = true;
         if(cameraPermissionGranted)
-        cameraPreview.pause();
+            cameraPreview.pause();
     }
+
     @Override
     public void onRequestPermissionsResult(int requestCode,
                                            String permissions[], int[] grantResults) {
@@ -104,6 +103,7 @@ public class MainActivity extends Activity {
                     cameraPreview = new CameraPreview(getApplicationContext());
                     cameraPermissionGranted = true;
                     wallView.addView(cameraPreview);
+                    requestGPSPermission();
                 } else {
                     Toast.makeText(getApplicationContext(),"We need the camera, BYE!", Toast.LENGTH_LONG).show();
                     finish();
@@ -118,6 +118,7 @@ public class MainActivity extends Activity {
                     gpsPermissionGranted = true;
                 } else {
                     Toast.makeText(getApplicationContext(),"We need the GPS, BYE!", Toast.LENGTH_LONG).show();
+                    cameraPermissionGranted = false;
                     finish();
                 }
                 return;

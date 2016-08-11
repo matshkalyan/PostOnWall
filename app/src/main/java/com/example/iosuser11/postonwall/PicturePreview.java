@@ -30,4 +30,8 @@ public class PicturePreview extends View {
         canvas.drawBitmap(picture, 100, 100, null);
         Log.d("", "onDraw: called");
     }
+
+    void setTransformMatrix(Matrix mat) {
+        transformMat = mat;
+    }
 }
