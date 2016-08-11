@@ -39,9 +39,11 @@ public class MainActivity extends Activity {
         afterOnPause = false;
         wallView = (RelativeLayout)findViewById(R.id.wallView);
         requestCameraPermission();
-//        requestGPSPermission();
+        pictureView = new PicturePreview(getApplicationContext());
+        wallView.addView(pictureView);
 
     }
+
     private void requestCameraPermission(){
         int cameraPermissionCheck = ContextCompat.checkSelfPermission(this,
                 Manifest.permission.CAMERA);
@@ -50,7 +52,6 @@ public class MainActivity extends Activity {
             cameraPreview = new CameraPreview(getApplicationContext());
             wallView.addView(cameraPreview);
             cameraPermissionGranted = true;
-            requestGPSPermission();
         }
         else if(cameraPermissionCheck
                 != PackageManager.PERMISSION_GRANTED
@@ -103,7 +104,6 @@ public class MainActivity extends Activity {
                     cameraPreview = new CameraPreview(getApplicationContext());
                     cameraPermissionGranted = true;
                     wallView.addView(cameraPreview);
-                    requestGPSPermission();
                 } else {
                     Toast.makeText(getApplicationContext(),"We need the camera, BYE!", Toast.LENGTH_LONG).show();
                     finish();

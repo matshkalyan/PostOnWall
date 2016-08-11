@@ -16,6 +16,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
     Camera camera;
     SurfaceHolder holder;
+    byte[] currentFrame;
 
     public CameraPreview(Context context) {
         super(context);
@@ -47,7 +48,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
     @Override
     public void onPreviewFrame(byte[] bytes, Camera camera) {
-
+        currentFrame = bytes;
     }
 
     void pause() {
@@ -75,7 +76,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     }
 
     byte[] getCurrentFrame() {
-
+        return currentFrame;
     }
 
 }
