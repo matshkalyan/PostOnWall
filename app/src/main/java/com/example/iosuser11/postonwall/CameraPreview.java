@@ -21,12 +21,12 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         super(context);
         initCamera();
         setLayoutParams(new ViewGroup.LayoutParams(camera.getParameters().getPreviewSize().height, camera.getParameters().getPreviewSize().width));
+        holder = getHolder();
+        holder.addCallback(this);
     }
 
     @Override
     public void surfaceCreated(SurfaceHolder surfaceHolder) {
-        holder = getHolder();
-        holder.addCallback(this);
         try {
             camera.setPreviewDisplay(holder);
         } catch (IOException e) {
@@ -42,7 +42,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
     @Override
     public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
-        Log.d("", "surfaceDestroyed: surface destroyed");
+
     }
 
     @Override
@@ -54,6 +54,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         camera.stopPreview();
         camera.setPreviewCallback(null);
         camera.release();
+        Log.d("", "pause: camera released");
     }
 
     void initCamera() {
@@ -64,6 +65,8 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         camera.setParameters(params);
         camera.setPreviewCallback(this);
         camera.setDisplayOrientation(90);
+
+//
     }
 
 }
