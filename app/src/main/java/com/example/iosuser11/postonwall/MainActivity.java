@@ -44,7 +44,9 @@ public class MainActivity extends Activity {
         afterOnPause = false;
         wallView = (RelativeLayout)findViewById(R.id.wallView);
         cameraPreview = new CameraPreview(getApplicationContext());
+        pictureView = new PicturePreview(getApplicationContext());
         wallView.addView(cameraPreview);
+        wallView.addView(pictureView);
 
     }
 
