@@ -1,6 +1,5 @@
 package com.example.iosuser11.postonwall;
 
-import android.app.ActionBar;
 import android.content.Context;
 import android.hardware.Camera;
 import android.util.Log;
@@ -21,13 +20,13 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     public CameraPreview(Context context) {
         super(context);
         initCamera();
-        this.setLayoutParams(new ViewGroup.LayoutParams(camera.getParameters().getPreviewSize().height, camera.getParameters().getPreviewSize().width));
-        holder = getHolder();
-        holder.addCallback(this);
+        setLayoutParams(new ViewGroup.LayoutParams(camera.getParameters().getPreviewSize().height, camera.getParameters().getPreviewSize().width));
     }
 
     @Override
     public void surfaceCreated(SurfaceHolder surfaceHolder) {
+        holder = getHolder();
+        holder.addCallback(this);
         try {
             camera.setPreviewDisplay(holder);
         } catch (IOException e) {
@@ -43,7 +42,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
     @Override
     public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
-
+        Log.d("", "surfaceDestroyed: surface destroyed");
     }
 
     @Override
@@ -52,13 +51,19 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     }
 
     void pause() {
+        camera.stopPreview();
+        camera.setPreviewCallback(null);
         camera.release();
     }
 
     void initCamera() {
-            camera = Camera.open();
-            camera.setPreviewCallback(this);
-            camera.setDisplayOrientation(90);
-//
+        camera = Camera.open();
+        Camera.Parameters params;
+        params = camera.getParameters();
+        params.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+        camera.setParameters(params);
+        camera.setPreviewCallback(this);
+        camera.setDisplayOrientation(90);
     }
+
 }
