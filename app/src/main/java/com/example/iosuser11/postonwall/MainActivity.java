@@ -24,6 +24,7 @@ import org.opencv.features2d.FeatureDetector;
  * Created by iosuser11 on 8/10/16.
  */
 public class MainActivity extends Activity {
+    //
     CameraPreview cameraPreview;
     PicturePreview pictureView;
     RelativeLayout wallView;
@@ -36,7 +37,7 @@ public class MainActivity extends Activity {
     DescriptorExtractor descriptor;
 
     //original image locators
-    float[] originalGRV = new float[3];
+
     Location originalLocation = null;
 
     //keyponts/desc of currently comparing images
@@ -63,14 +64,17 @@ public class MainActivity extends Activity {
         afterOnPause = false;
         wallView = (RelativeLayout)findViewById(R.id.wallView);
         requestCameraPermission();
-//        requestGPSPermission();
 
-        detector = FeatureDetector.create(FeatureDetector.ORB);
-        descriptor = DescriptorExtractor.create(DescriptorExtractor.ORB);;
-        matcher = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE_HAMMINGLUT);
+        //requestGPSPermission();
+
+
         pictureView = new PicturePreview(getApplicationContext());
         wallView.addView(pictureView);
 
+        //orb Stuff
+        detector = FeatureDetector.create(FeatureDetector.ORB);
+        descriptor = DescriptorExtractor.create(DescriptorExtractor.ORB);;
+        matcher = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE_HAMMINGLUT);
     }
     private void requestCameraPermission(){
         int cameraPermissionCheck = ContextCompat.checkSelfPermission(this,
