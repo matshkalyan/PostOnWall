@@ -30,7 +30,6 @@ public class MainActivity extends Activity {
     RelativeLayout wallView;
 
     GPSTracker mGPSTracker;
-
     //ORB stuff
     DescriptorMatcher matcher;
     FeatureDetector detector;
