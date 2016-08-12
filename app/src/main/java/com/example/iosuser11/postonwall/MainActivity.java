@@ -3,11 +3,14 @@ package com.example.iosuser11.postonwall;
 import android.Manifest;
 import android.app.Activity;
 import android.content.pm.PackageManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
+import android.view.View;
 import android.view.Window;
+import android.widget.Button;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
@@ -23,6 +26,10 @@ public class MainActivity extends Activity {
     private boolean afterOnPause;
     private boolean cameraPermissionGranted = false;
     private boolean gpsPermissionGranted = false;
+    private Button post;
+    private GRVCoordinates grvCoords;
+    private float[] wallCoords;
+    private float[] currentCoords;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,11 +44,32 @@ public class MainActivity extends Activity {
         }
 
         afterOnPause = false;
+        grvCoords = new GRVCoordinates(this);
         wallView = (RelativeLayout)findViewById(R.id.wallView);
         requestCameraPermission();
         pictureView = new PicturePreview(getApplicationContext());
         wallView.addView(pictureView);
+        post = (Button)findViewById(R.id.post);
+        post.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                wallCoords = grvCoords.getValues();
+                new AsyncTask<Void, Void, Void>(){
+                    @Override
+                    protected Void doInBackground(Void... voids) {
+                        startTracking();
+                        return null;
+                    }
+                }.execute();
+            }
+        });
+    }
 
+    void startTracking() {
+        while(true) {
+            currentCoords = grvCoords.getValues();
+
+        }
     }
 
     private void requestCameraPermission(){
