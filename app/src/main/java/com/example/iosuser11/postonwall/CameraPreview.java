@@ -21,7 +21,8 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     public CameraPreview(Context context) {
         super(context);
         initCamera();
-        setLayoutParams(new ViewGroup.LayoutParams(camera.getParameters().getPreviewSize().height, camera.getParameters().getPreviewSize().width));
+//        setLayoutParams(new ViewGroup.LayoutParams(camera.getParameters().getPreviewSize().height, camera.getParameters().getPreviewSize().width));
+        setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         holder = getHolder();
         holder.addCallback(this);
     }
@@ -67,7 +68,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 //                params.setPreviewSize(size.width, size.height);
 //            }
 //        }
-        params.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+        params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
         camera.setParameters(params);
         camera.setPreviewCallback(this);
         camera.setDisplayOrientation(90);

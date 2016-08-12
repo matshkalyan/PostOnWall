@@ -10,8 +10,10 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
@@ -30,7 +32,7 @@ public class MainActivity extends Activity {
     //
     CameraPreview cameraPreview;
     PicturePreview pictureView;
-    RelativeLayout wallView;
+    FrameLayout wallView;
 
     GPSTracker mGPSTracker;
     //ORB stuff
@@ -64,7 +66,7 @@ public class MainActivity extends Activity {
         OpenCVLoader.initDebug();
         afterOnPause = false;
         grvCoords = new GRVCoordinates(this);
-        wallView = (RelativeLayout) findViewById(R.id.wallView);
+        wallView = (FrameLayout) findViewById(R.id.wallView);
         requestCameraPermission();
         detector = FeatureDetector.create(FeatureDetector.ORB);
         descriptor = DescriptorExtractor.create(DescriptorExtractor.ORB);
@@ -76,6 +78,7 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View view) {
                 wallCoords = grvCoords.getValues();
+                Log.d("", "onClick: GRV coords are: "+wallCoords[0]+" "+wallCoords[1]+" "+wallCoords[2]);
                 new AsyncTask<Void, Void, Void>() {
                     @Override
                     protected Void doInBackground(Void... voids) {
