@@ -14,6 +14,7 @@ public class GRVCoordinates implements SensorEventListener {
     SensorManager mSensorManager;
     private Sensor mSensor;
 
+    //[o] =x , [1] = y [2] = z
     private float[] values = new float[3];
 
     public GRVCoordinates(Activity activity) {
