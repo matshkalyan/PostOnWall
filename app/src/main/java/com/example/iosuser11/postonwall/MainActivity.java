@@ -287,7 +287,7 @@ public class MainActivity extends Activity {
         if (cameraPermissionCheck == PackageManager.PERMISSION_GRANTED) {
             cameraPreview = new CameraPreview(getApplicationContext());
             wallView.addView(cameraPreview);
-            pictureView.setParentSize(cameraPreview.getPreviewWidth(), cameraPreview.getPreviewHeight());
+            pictureView.setParentSize(cameraPreview.getmPreviewSize().width, cameraPreview.getmPreviewSize().height);
             pictureView.bringToFront();
             cameraPermissionGranted = true;
             requestGPSPermission();
@@ -334,7 +334,7 @@ public class MainActivity extends Activity {
                     cameraPreview = new CameraPreview(getApplicationContext());
                     cameraPermissionGranted = true;
                     wallView.addView(cameraPreview);
-                    pictureView.setParentSize(cameraPreview.getPreviewWidth(), cameraPreview.getPreviewHeight());
+                    pictureView.setParentSize(cameraPreview.getmPreviewSize().width, cameraPreview.getmPreviewSize().height);
                     pictureView.bringToFront();
                     Log.d("", "onCreate: camerapreview added, coords of the wallview are: "+wallView.getPivotX()+" "+wallView.getPivotY());
                     requestGPSPermission();
