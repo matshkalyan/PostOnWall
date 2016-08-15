@@ -6,6 +6,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.hardware.Camera;
+import android.hardware.SensorManager;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -36,6 +37,7 @@ import org.opencv.imgproc.Imgproc;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.RunnableFuture;
 
 /**
  * Created by iosuser11 on 8/10/16.
@@ -46,6 +48,8 @@ public class MainActivity extends Activity {
     private CameraPreview cameraPreview;
     private PicturePreview pictureView;
     private Button post;
+    private Button track;
+    private Button stop;
     private Camera.Size previewSize;
 
     //Image processing stuff
@@ -69,6 +73,7 @@ public class MainActivity extends Activity {
     private boolean afterOnPause = false;
     private boolean cameraPermissionGranted = false;
     private boolean gpsPermissionGranted = false;
+    private boolean trackingState = false;
 
 
     @Override
@@ -81,8 +86,13 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         wallView = (FrameLayout) findViewById(R.id.wallView);
         pictureView = new PicturePreview(getApplicationContext());
-//        wallView.addView(pictureView);
+        requestCameraPermission();
+        wallView.addView(pictureView);
         post = (Button) findViewById(R.id.post);
+        track = (Button) findViewById(R.id.track);
+        stop = (Button) findViewById(R.id.stop);
+        track.setVisibility(View.GONE);
+        stop.setVisibility(View.GONE);
 
         //initialising orb stuff
         detector = FeatureDetector.create(FeatureDetector.ORB);
@@ -96,23 +106,6 @@ public class MainActivity extends Activity {
         imgCurrent = new Mat();
         imgOriginal = new Mat();
 
-        post.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                wallCoords = grvCoords.getValues();
-                Log.d("", "onClick: GRV coords are: "+wallCoords[0]+" "+wallCoords[1]+" "+wallCoords[2]);
-                new AsyncTask<Void, Void, Void>() {
-                    @Override
-                    protected Void doInBackground(Void... voids) {
-                        capture();
-                        findImages();
-                        startTracking();
-                        return null;
-                    }
-                }.execute();
-            }
-        });
-
         //setting up sensors
         grvCoords = new GRVCoordinates(this);
 
@@ -121,12 +114,47 @@ public class MainActivity extends Activity {
         descriptor = DescriptorExtractor.create(DescriptorExtractor.ORB);
         matcher = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE_HAMMINGLUT);
 
-        requestCameraPermission();
-        wallView.addView(pictureView);
+        post.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                post.setVisibility(View.GONE);
+                track.setVisibility(View.VISIBLE);
+                capture();
+            }
+        });
+
+        track.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                track.setVisibility(View.GONE);
+                stop.setVisibility(View.VISIBLE);
+                trackingState = true;
+                new AsyncTask<Void, Void, Void>() {
+                    @Override
+                    protected Void doInBackground(Void... voids) {
+                        while(trackingState) {
+                            findImages();
+                        }
+                        return null;
+                    }
+                }.execute();
+            }
+        });
+
+        stop.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                stop.setVisibility(View.GONE);
+                post.setVisibility(View.VISIBLE);
+                trackingState = false;
+                pictureView.reset();
+                pictureView.invalidate();
+                Log.d("", "onClick: pictureview invalidated");
+            }
+        });
     }
 
     //posts the image on the wall, gets the original image descriptors, keypoints, grv etc.
-    //TODO:  upload to server
     private void capture(){
         previewSize = cameraPreview.getmPreviewSize();
         byte[] data = cameraPreview.getCurrentFrame();
@@ -140,7 +168,7 @@ public class MainActivity extends Activity {
 
 
         //grv coords of the original image
-        currentCoords = grvCoords.getValues();
+        wallCoords = grvCoords.getValues();
 
         //GPS coords of the original image
         if(mGPSTracker.canGetLocation()){
@@ -154,6 +182,8 @@ public class MainActivity extends Activity {
 
     private void findImages(){
         while (true) {
+            currentCoords = grvCoords.getValues();
+
             //gets current location to compare with original image
             if(mGPSTracker.canGetLocation()){
                 currentLocation = mGPSTracker.getLocation();
@@ -170,8 +200,8 @@ public class MainActivity extends Activity {
                 if((currentLocation.getLongitude() + (currentLocation.getAccuracy()/111111.0) > originalLocation.getLongitude())&&
                         (currentLocation.getLongitude() - (currentLocation.getAccuracy()/111111.0) < originalLocation.getLongitude())) {
                     //compares grv coordinates
-                    if(Math.abs((currentCoords[1] + 0.7) - (wallCoords[1] + 0.7)) > 0.04
-                            && Math.abs((currentCoords[1] + 0.7) - (wallCoords[1] + 0.7)) <= 0.09) {
+                    if(Math.abs((currentCoords[1] + 0.7) - (wallCoords[1] + 0.7)) > 0
+                            && Math.abs((currentCoords[1] + 0.7) - (wallCoords[1] + 0.7)) <= 2) {
                         Log.d("", "close enuff, start tracking");
 //                            startTracking();
                         if(performImageMatch())
@@ -180,14 +210,11 @@ public class MainActivity extends Activity {
                     else {
                         Log.d("", "aint enough,   FarAway");
                     }
-
-
                 }
             }
-
-
         }
     }
+
     boolean performImageMatch(){
         previewSize = cameraPreview.getmPreviewSize();
         byte[] data = cameraPreview.getCurrentFrame();
@@ -222,10 +249,10 @@ public class MainActivity extends Activity {
             MatOfPoint2f scene = new MatOfPoint2f();
             scene.fromList(scenepoints);
 
-            Mat affine = Imgproc.getAffineTransform(obj,scene);
-            Matrix transformMat = new Matrix();
-            transformMat.setTranslate((float) affine.get(0,2)[0],(float) affine.get(1,2)[0]);
-            pictureView.setTransformMatrix(transformMat);
+//            Mat affine = Imgproc.getAffineTransform(obj,scene);
+//            Matrix transformMat = new Matrix();
+//            transformMat.setTranslate((float) affine.get(0,2)[0],(float) affine.get(1,2)[0]);
+//            pictureView.setTransformMatrix(transformMat);
             return true;
         }
         else
@@ -236,10 +263,22 @@ public class MainActivity extends Activity {
 
 
     void startTracking() {
-        //to use grv coords to track image;
+        while(true) {
+            currentCoords = grvCoords.getValues();
+            float[] rotMatrix = new float[9];
+            SensorManager.getRotationMatrixFromVector(rotMatrix, new float[]{Math.abs(currentCoords[0] - wallCoords[0]), Math.abs(currentCoords[1] - wallCoords[1]), Math.abs(currentCoords[2] - wallCoords[2]), Math.abs(currentCoords[3] - wallCoords[3])});
+//            Matrix transform = new Matrix();
+//            transform.setValues(rotMatrix);
+            pictureView.setTransformMatrix(rotMatrix);
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    pictureView.invalidate();
+                }
+            });
 
+        }
     }
-
 
     private void requestCameraPermission() {
         int cameraPermissionCheck = ContextCompat.checkSelfPermission(this,
