@@ -14,12 +14,11 @@ public class GRVCoordinates implements SensorEventListener {
     SensorManager mSensorManager;
     private Sensor mSensor;
 
-    //[o] =x , [1] = y [2] = z
+    //[0] = x , [1] = y [2] = z
     private float[] values = new float[3];
 
     public GRVCoordinates(Activity activity) {
         // Get an instance of the SensorManager
-        if(activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_GYROSCOPE))
         mSensorManager = (SensorManager) activity.getSystemService(activity.SENSOR_SERVICE);
         mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR);
 
@@ -29,9 +28,7 @@ public class GRVCoordinates implements SensorEventListener {
     public float[] getValues() {
         return values;
     }
-    public float getX (){return values[0];}
-    public float getY (){return values[1];}
-    public float getZ (){return values[2];}
+
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
         if (sensorEvent.sensor.getType() != Sensor.TYPE_GAME_ROTATION_VECTOR) {

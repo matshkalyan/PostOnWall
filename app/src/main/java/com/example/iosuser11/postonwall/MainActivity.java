@@ -170,7 +170,7 @@ public class MainActivity extends Activity {
                 if((currentLocation.getLongitude() + (currentLocation.getAccuracy()/111111.0) > originalLocation.getLongitude())&&
                         (currentLocation.getLongitude() - (currentLocation.getAccuracy()/111111.0) < originalLocation.getLongitude())) {
                     //compares grv coordinates
-                    if(Math.abs((currentCoords[1] + 0.7) - (wallCoords[1] + 0.7)) > 0.04
+                    if(Math.abs((currentCoords[1] + 0.7) - (wallCoords[1] + 0.7)) >= 0.00
                             && Math.abs((currentCoords[1] + 0.7) - (wallCoords[1] + 0.7)) <= 0.09) {
                         Log.d("", "close enuff, start tracking");
 //                            startTracking();
