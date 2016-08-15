@@ -268,7 +268,7 @@ public class MainActivity extends Activity {
             currentCoords = grvCoords.getValues();
             float[] rotMatrix = new float[9];
 //            SensorManager.getRotationMatrixFromVector(rotMatrix, new float[]{Math.abs(currentCoords[0] - wallCoords[0]), Math.abs(currentCoords[1] - wallCoords[1]), Math.abs(currentCoords[2] - wallCoords[2]), Math.abs(currentCoords[3] - wallCoords[3])});
-            SensorManager.getRotationMatrixFromVector(rotMatrix, new float[]{(currentCoords[0] - wallCoords[0]), (currentCoords[1] - wallCoords[1]), (currentCoords[2] - wallCoords[2])});
+            SensorManager.getRotationMatrixFromVector(rotMatrix, new float[]{(currentCoords[0] - wallCoords[0]), (currentCoords[1] - wallCoords[1]), (currentCoords[2] - wallCoords[2]), (currentCoords[3] - wallCoords[3])});
 //            Matrix transform = new Matrix();
 //            transform.setValues(rotMatrix);
             pictureView.setTransformMatrix(rotMatrix);

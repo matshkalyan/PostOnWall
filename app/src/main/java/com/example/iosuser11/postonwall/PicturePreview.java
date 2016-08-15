@@ -28,17 +28,22 @@ public class PicturePreview extends View {
         this.context = context;
         p = BitmapFactory.decodeResource(getResources(), R.drawable.picture1);
         picture = Bitmap.createScaledBitmap(p, p.getWidth()/5, p.getHeight()/5, true);
-//        transformMat = new Matrix();
+        transformMat = new Matrix();
 //        transformMat.setValues(new float[]{1, 0, 0, 0, 1, 0, 0, 0, 1});
+//        transformMat.setValues(new float[]{0, 0, 0, 0, 0, 0, 0, 0, 0});
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        canvas.setMatrix(transformMat);
+
         WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         Point displaysize = new Point();
         wm.getDefaultDisplay().getSize(displaysize);
+        transformMat.setValues(new float[]{1, 0, (displaysize.x - parentWidth)/2, 0, 1, (displaysize.y - parentHeight)/2, 0, 0, 1});
+
+        canvas.setMatrix(transformMat);
+        transformMat = canvas.getMatrix();
         canvas.drawBitmap(picture, (parentWidth - picture.getWidth())/2, (parentHeight - picture.getHeight())/2, null);
     }
 
