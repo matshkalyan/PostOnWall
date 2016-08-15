@@ -132,9 +132,7 @@ public class MainActivity extends Activity {
                 new AsyncTask<Void, Void, Void>() {
                     @Override
                     protected Void doInBackground(Void... voids) {
-                        while(trackingState) {
-                            findImages();
-                        }
+                        findImages();
                         return null;
                     }
                 }.execute();
@@ -149,7 +147,6 @@ public class MainActivity extends Activity {
                 trackingState = false;
                 pictureView.reset();
                 pictureView.invalidate();
-                Log.d("", "onClick: pictureview invalidated");
             }
         });
     }
@@ -182,6 +179,8 @@ public class MainActivity extends Activity {
 
     private void findImages(){
         while (true) {
+            if(!trackingState)
+                break;
             currentCoords = grvCoords.getValues();
 
             //gets current location to compare with original image
@@ -264,9 +263,12 @@ public class MainActivity extends Activity {
 
     void startTracking() {
         while(true) {
+            if(!trackingState)
+                break;
             currentCoords = grvCoords.getValues();
             float[] rotMatrix = new float[9];
-            SensorManager.getRotationMatrixFromVector(rotMatrix, new float[]{Math.abs(currentCoords[0] - wallCoords[0]), Math.abs(currentCoords[1] - wallCoords[1]), Math.abs(currentCoords[2] - wallCoords[2]), Math.abs(currentCoords[3] - wallCoords[3])});
+//            SensorManager.getRotationMatrixFromVector(rotMatrix, new float[]{Math.abs(currentCoords[0] - wallCoords[0]), Math.abs(currentCoords[1] - wallCoords[1]), Math.abs(currentCoords[2] - wallCoords[2]), Math.abs(currentCoords[3] - wallCoords[3])});
+            SensorManager.getRotationMatrixFromVector(rotMatrix, new float[]{(currentCoords[0] - wallCoords[0]), (currentCoords[1] - wallCoords[1]), (currentCoords[2] - wallCoords[2])});
 //            Matrix transform = new Matrix();
 //            transform.setValues(rotMatrix);
             pictureView.setTransformMatrix(rotMatrix);
