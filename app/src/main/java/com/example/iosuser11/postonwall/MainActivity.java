@@ -3,6 +3,7 @@ package com.example.iosuser11.postonwall;
 import android.Manifest;
 import android.app.Activity;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -10,11 +11,9 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.Button;
 import android.widget.FrameLayout;
-import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 
@@ -29,50 +28,44 @@ import org.opencv.features2d.FeatureDetector;
  * Created by iosuser11 on 8/10/16.
  */
 public class MainActivity extends Activity {
-    //
-    CameraPreview cameraPreview;
-    PicturePreview pictureView;
-    FrameLayout wallView;
+    //UI stuff
+    private FrameLayout wallView;
+    private CameraPreview cameraPreview;
+    private PicturePreview pictureView;
+    private Button post;
 
-    GPSTracker mGPSTracker;
-    //ORB stuff
+    //Image processing stuff
     DescriptorMatcher matcher;
     FeatureDetector detector;
     DescriptorExtractor descriptor;
-
-    //original image locators
-
-    Location originalLocation = null;
-
-    //keyponts/desc of currently comparing images
     Mat imgOriginal, imgCurrent;
     Mat descriptorsOriginal, descriptorsCurrent;
     MatOfKeyPoint keypointsOriginal, keypointsCurrent;
 
-    private boolean afterOnPause;
-    private boolean cameraPermissionGranted = false;
-    private boolean gpsPermissionGranted = false;
+    //Sensors
+    private GPSTracker gpsTracker;
+    private Location originalLocation = null;
     private GRVCoordinates grvCoords;
     private float[] wallCoords;
     private float[] currentCoords;
-    private Button post;
+
+    //flags
+    private boolean afterOnPause = false;
+    private boolean cameraPermissionGranted = false;
+    private boolean gpsPermissionGranted = false;
+
 
     @Override
-
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        OpenCVLoader.initDebug();
+
+        //UI stuff
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.activity_main);
-        OpenCVLoader.initDebug();
-        afterOnPause = false;
-        grvCoords = new GRVCoordinates(this);
         wallView = (FrameLayout) findViewById(R.id.wallView);
-        requestCameraPermission();
-        detector = FeatureDetector.create(FeatureDetector.ORB);
-        descriptor = DescriptorExtractor.create(DescriptorExtractor.ORB);
-        matcher = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE_HAMMINGLUT);
         pictureView = new PicturePreview(getApplicationContext());
-        wallView.addView(pictureView);
+//        wallView.addView(pictureView);
         post = (Button) findViewById(R.id.post);
         post.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -88,6 +81,17 @@ public class MainActivity extends Activity {
                 }.execute();
             }
         });
+
+        //setting up sensors
+        grvCoords = new GRVCoordinates(this);
+
+        //setting up image processing  stuff
+        detector = FeatureDetector.create(FeatureDetector.ORB);
+        descriptor = DescriptorExtractor.create(DescriptorExtractor.ORB);
+        matcher = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE_HAMMINGLUT);
+
+        requestCameraPermission();
+        wallView.addView(pictureView);
     }
 
     void startTracking() {
@@ -103,31 +107,24 @@ public class MainActivity extends Activity {
         if (cameraPermissionCheck == PackageManager.PERMISSION_GRANTED) {
             cameraPreview = new CameraPreview(getApplicationContext());
             wallView.addView(cameraPreview);
+            pictureView.setParentSize(cameraPreview.getPreviewWidth(), cameraPreview.getPreviewHeight());
+            pictureView.bringToFront();
             cameraPermissionGranted = true;
             requestGPSPermission();
-        } else if (cameraPermissionCheck
-                != PackageManager.PERMISSION_GRANTED
-                ) {
+        } else if (cameraPermissionCheck != PackageManager.PERMISSION_GRANTED) {
             cameraPermissionGranted = false;
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 1);
         }
     }
 
     private void requestGPSPermission() {
-        int gpsPermissionCheck = ContextCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION);
-
+        int gpsPermissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
         if (gpsPermissionCheck == PackageManager.PERMISSION_GRANTED) {
-            //do the gps thing
-            mGPSTracker = new GPSTracker(this);
+            gpsTracker = new GPSTracker(this);
             gpsPermissionGranted = true;
-        } else if (gpsPermissionCheck
-                != PackageManager.PERMISSION_GRANTED
-                ) {
+        } else if (gpsPermissionCheck != PackageManager.PERMISSION_GRANTED) {
             gpsPermissionGranted = false;
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
-
-
         }
     }
 
@@ -157,6 +154,9 @@ public class MainActivity extends Activity {
                     cameraPreview = new CameraPreview(getApplicationContext());
                     cameraPermissionGranted = true;
                     wallView.addView(cameraPreview);
+                    pictureView.setParentSize(cameraPreview.getPreviewWidth(), cameraPreview.getPreviewHeight());
+                    pictureView.bringToFront();
+                    Log.d("", "onCreate: camerapreview added, coords of the wallview are: "+wallView.getPivotX()+" "+wallView.getPivotY());
                     requestGPSPermission();
                 } else {
                     Toast.makeText(getApplicationContext(), "We need the camera, BYE!", Toast.LENGTH_LONG).show();
@@ -167,7 +167,7 @@ public class MainActivity extends Activity {
             case 2: {
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    mGPSTracker = new GPSTracker(this);
+                    gpsTracker = new GPSTracker(this);
                     gpsPermissionGranted = true;
                 } else {
                     Toast.makeText(getApplicationContext(), "We need the GPS, BYE!", Toast.LENGTH_LONG).show();
