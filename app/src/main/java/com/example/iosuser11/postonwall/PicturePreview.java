@@ -56,6 +56,5 @@ public class PicturePreview extends View {
         parentHeight = width;
         parentWidth = height;
         setLayoutParams(new ViewGroup.LayoutParams(parentWidth, parentHeight));
-//        setBackgroundColor(Color.RED);
     }
 }
