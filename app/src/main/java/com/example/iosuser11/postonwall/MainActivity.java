@@ -85,9 +85,7 @@ public class MainActivity extends Activity {
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.activity_main);
         wallView = (FrameLayout) findViewById(R.id.wallView);
-        pictureView = new PicturePreview(getApplicationContext());
         requestCameraPermission();
-        wallView.addView(pictureView);
         post = (Button) findViewById(R.id.post);
         track = (Button) findViewById(R.id.track);
         stop = (Button) findViewById(R.id.stop);
@@ -289,7 +287,9 @@ public class MainActivity extends Activity {
         if (cameraPermissionCheck == PackageManager.PERMISSION_GRANTED) {
             cameraPreview = new CameraPreview(getApplicationContext());
             wallView.addView(cameraPreview);
-            pictureView.setParentSize(cameraPreview.getmPreviewSize().width, cameraPreview.getmPreviewSize().height);
+            pictureView = new PicturePreview(getApplicationContext(), cameraPreview.getmPreviewSize().width, cameraPreview.getmPreviewSize().height);
+//            pictureView.setParentSize(cameraPreview.getmPreviewSize().width, cameraPreview.getmPreviewSize().height);
+            wallView.addView(pictureView);
             pictureView.bringToFront();
             cameraPermissionGranted = true;
             requestGPSPermission();
@@ -306,7 +306,7 @@ public class MainActivity extends Activity {
             gpsPermissionGranted = true;
         } else if (gpsPermissionCheck != PackageManager.PERMISSION_GRANTED) {
             gpsPermissionGranted = false;
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 2);
         }
     }
 
@@ -326,17 +326,16 @@ public class MainActivity extends Activity {
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           String permissions[], int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
         switch (requestCode) {
             case 1: {
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     cameraPreview = new CameraPreview(getApplicationContext());
                     cameraPermissionGranted = true;
                     wallView.addView(cameraPreview);
-                    pictureView.setParentSize(cameraPreview.getmPreviewSize().width, cameraPreview.getmPreviewSize().height);
+                    pictureView = new PicturePreview(getApplicationContext(), cameraPreview.getmPreviewSize().width, cameraPreview.getmPreviewSize().height);
+//                    pictureView.setParentSize(cameraPreview.getmPreviewSize().width, cameraPreview.getmPreviewSize().height);
+                    wallView.addView(pictureView);
                     pictureView.bringToFront();
                     Log.d("", "onCreate: camerapreview added, coords of the wallview are: "+wallView.getPivotX()+" "+wallView.getPivotY());
                     requestGPSPermission();
@@ -347,8 +346,7 @@ public class MainActivity extends Activity {
                 return;
             }
             case 2: {
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     mGPSTracker = new GPSTracker(this);
                     gpsPermissionGranted = true;
                 } else {

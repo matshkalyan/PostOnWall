@@ -24,7 +24,7 @@ public class PicturePreview extends View {
     private int parentWidth, parentHeight;
     private Point displaySize;
 
-    public PicturePreview(Context context) {
+    public PicturePreview(Context context, int width, int height) {
         super(context);
         this.context = context;
         WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
@@ -35,6 +35,12 @@ public class PicturePreview extends View {
         transformMat = new Matrix();
 //        transformMat.setValues(new float[]{1, 0, 0, 0, 1, 0, 0, 0, 1});
 //        transformMat.setValues(new float[]{0, 0, 0, 0, 0, 0, 0, 0, 0});
+
+        parentHeight = width;
+        parentWidth = height;
+        setLayoutParams(new ViewGroup.LayoutParams(parentWidth, parentHeight));
+
+        transformMat.setValues(new float[]{1, 0, (displaySize.x - parentWidth)/2, 0, 1, (displaySize.y - parentHeight)/2, 0, 0, 1});
     }
 
     @Override
@@ -51,20 +57,12 @@ public class PicturePreview extends View {
         //we should multiply the identity matrix with transform
 
 //        float[][] ident = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
-        float[][] ident = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+        float[][] ident = {{1, 0, (displaySize.x - parentWidth)/2}, {0, 1, (displaySize.y - parentHeight)/2}, {0, 0, 1}};
         float[][] trans = {{transform[0], transform[1], transform[2]}, {transform[3], transform[4], transform[5]}, {transform[6], transform[7], transform[8]}};
         float[][] temp = new float[3][3];
         multiply(ident, trans, temp);
         transformMat.setValues(new float[]{temp[0][0],temp[0][1],temp[0][2],temp[1][0],temp[1][1],temp[1][2],temp[2][0],temp[2][1],temp[2][2]});
         Log.d("", "setTransformMatrix: transformmat is: " + transformMat);
-    }
-
-    void setParentSize(int width, int height) {
-        parentHeight = width;
-        parentWidth = height;
-        setLayoutParams(new ViewGroup.LayoutParams(parentWidth, parentHeight));
-
-        transformMat.setValues(new float[]{1, 0, (displaySize.x - parentWidth)/2, 0, 1, (displaySize.y - parentHeight)/2, 0, 0, 1});
     }
 
     public static void multiply(float[][] m1, float[][] m2, float[][] result) {
