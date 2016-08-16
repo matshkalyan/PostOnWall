@@ -56,9 +56,17 @@ public class PicturePreview extends View {
 //        transformMat = mat;
         //we should multiply the identity matrix with transform
 
-//        float[][] ident = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
-        float[][] ident = {{1, 0, (displaySize.x - parentWidth)/2}, {0, 1, (displaySize.y - parentHeight)/2}, {0, 0, 1}};
+        float[] arr = new float[9];
+        transformMat.getValues(arr);
+        float[][] ident = {{arr[0], arr[1], arr[2]}, {arr[3], arr[4], arr[5]}, {arr[6], arr[7], arr[8]}};
+//        float[][] ident = {{1, 0, (displaySize.x - parentWidth)/2}, {0, 1, (displaySize.y - parentHeight)/2}, {0, 0, 1}};
+
+
+        //try getting the transformation different ways
         float[][] trans = {{transform[0], transform[1], transform[2]}, {transform[3], transform[4], transform[5]}, {transform[6], transform[7], transform[8]}};
+//        float[][] trans = {{transform[1], transform[0], transform[2]}, {transform[3], transform[4], transform[5]}, {transform[6], transform[7], transform[8]}};
+
+
         float[][] temp = new float[3][3];
         multiply(ident, trans, temp);
         transformMat.setValues(new float[]{temp[0][0],temp[0][1],temp[0][2],temp[1][0],temp[1][1],temp[1][2],temp[2][0],temp[2][1],temp[2][2]});

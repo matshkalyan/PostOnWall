@@ -200,7 +200,6 @@ public class MainActivity extends Activity {
                     if(Math.abs((currentCoords[1] + 0.7) - (wallCoords[1] + 0.7)) > 0
                             && Math.abs((currentCoords[1] + 0.7) - (wallCoords[1] + 0.7)) <= 2) {
                         Log.d("", "close enuff, start tracking");
-//                            startTracking();
                         if(performImageMatch())
                             startTracking();
                     }
@@ -252,23 +251,27 @@ public class MainActivity extends Activity {
 //            pictureView.setTransformMatrix(transformMat);
             return true;
         }
-        else
-        {
+        else {
             return false;
         }
     }
-
 
     void startTracking() {
         while(true) {
             if(!trackingState)
                 break;
+            wallCoords = currentCoords;
             currentCoords = grvCoords.getValues();
             float[] rotMatrix = new float[9];
-//            SensorManager.getRotationMatrixFromVector(rotMatrix, new float[]{Math.abs(currentCoords[0] - wallCoords[0]), Math.abs(currentCoords[1] - wallCoords[1]), Math.abs(currentCoords[2] - wallCoords[2]), Math.abs(currentCoords[3] - wallCoords[3])});
+            rotMatrix[0] = 1;
+            rotMatrix[3] = 1;
+            rotMatrix[6] = 1;
+            float[] orientMatrix = new float[3];    // yaw/pitch/roll
             SensorManager.getRotationMatrixFromVector(rotMatrix, new float[]{(currentCoords[0] - wallCoords[0]), (currentCoords[1] - wallCoords[1]), (currentCoords[2] - wallCoords[2]), (currentCoords[3] - wallCoords[3])});
-//            Matrix transform = new Matrix();
-//            transform.setValues(rotMatrix);
+            SensorManager.getOrientation(rotMatrix, orientMatrix);
+//            double yaw=Math.atan2(rotMatrix[3],rotMatrix[0]);
+//            double pitch=Math.atan2(-rotMatrix[6],Math.sqrt(rotMatrix[7]*rotMatrix[7]+rotMatrix[8]*rotMatrix[8]);
+//            double roll=Math.atan2(rotMatrix[7],rotMatrix[8]);
             pictureView.setTransformMatrix(rotMatrix);
             runOnUiThread(new Runnable() {
                 @Override
@@ -276,7 +279,6 @@ public class MainActivity extends Activity {
                     pictureView.invalidate();
                 }
             });
-
         }
     }
 
