@@ -22,10 +22,14 @@ public class PicturePreview extends View {
     private Bitmap p, picture;
     private Context context;
     private int parentWidth, parentHeight;
+    private Point displaySize;
 
     public PicturePreview(Context context) {
         super(context);
         this.context = context;
+        WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        displaySize = new Point();
+        wm.getDefaultDisplay().getSize(displaySize);
         p = BitmapFactory.decodeResource(getResources(), R.drawable.picture1);
         picture = Bitmap.createScaledBitmap(p, p.getWidth()/5, p.getHeight()/5, true);
         transformMat = new Matrix();
@@ -37,11 +41,6 @@ public class PicturePreview extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-        Point displaysize = new Point();
-        wm.getDefaultDisplay().getSize(displaysize);
-        transformMat.setValues(new float[]{1, 0, (displaysize.x - parentWidth)/2, 0, 1, (displaysize.y - parentHeight)/2, 0, 0, 1});
-
         canvas.setMatrix(transformMat);
         transformMat = canvas.getMatrix();
         canvas.drawBitmap(picture, (parentWidth - picture.getWidth())/2, (parentHeight - picture.getHeight())/2, null);
@@ -51,6 +50,7 @@ public class PicturePreview extends View {
 //        transformMat = mat;
         //we should multiply the identity matrix with transform
 
+//        float[][] ident = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
         float[][] ident = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
         float[][] trans = {{transform[0], transform[1], transform[2]}, {transform[3], transform[4], transform[5]}, {transform[6], transform[7], transform[8]}};
         float[][] temp = new float[3][3];
@@ -63,6 +63,8 @@ public class PicturePreview extends View {
         parentHeight = width;
         parentWidth = height;
         setLayoutParams(new ViewGroup.LayoutParams(parentWidth, parentHeight));
+
+        transformMat.setValues(new float[]{1, 0, (displaySize.x - parentWidth)/2, 0, 1, (displaySize.y - parentHeight)/2, 0, 0, 1});
     }
 
     public static void multiply(float[][] m1, float[][] m2, float[][] result) {
@@ -81,9 +83,7 @@ public class PicturePreview extends View {
     }
 
     void reset() {
-        Log.d("", "reset: called");
-        transformMat.setValues(new float[]{1, 0, 0, 0, 1, 0, 0, 0, 1});
+        transformMat.setValues(new float[]{1, 0, (displaySize.x - parentWidth)/2, 0, 1, (displaySize.y - parentHeight)/2, 0, 0, 1});
         this.invalidate();
-        Log.d("", "reset: called");
     }
 }

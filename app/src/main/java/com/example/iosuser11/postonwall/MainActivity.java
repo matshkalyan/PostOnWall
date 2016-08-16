@@ -46,19 +46,19 @@ public class MainActivity extends Activity {
     //UI stuff
     private FrameLayout wallView;
     private CameraPreview cameraPreview;
+    private Camera.Size previewSize;
     private PicturePreview pictureView;
     private Button post;
     private Button track;
     private Button stop;
-    private Camera.Size previewSize;
 
     //Image processing stuff
-    DescriptorMatcher matcher;
-    FeatureDetector detector;
-    DescriptorExtractor descriptor;
     Mat imgOriginal, imgCurrent;
-    Mat descriptorsOriginal, descriptorsCurrent;
+    FeatureDetector detector;
     MatOfKeyPoint keypointsOriginal, keypointsCurrent;
+    DescriptorExtractor descriptor;
+    Mat descriptorsOriginal, descriptorsCurrent;
+    DescriptorMatcher matcher;
     MatOfDMatch matches;
 
     //Sensors
