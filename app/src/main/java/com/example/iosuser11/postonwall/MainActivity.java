@@ -188,7 +188,6 @@ public class MainActivity extends Activity {
             }
             else{
                 Toast.makeText(this.getApplicationContext(),"dfuq, no location!", Toast.LENGTH_LONG).show();
-                //shows GPS  Settongs for the user to enable GPS
                 mGPSTracker.showSettingsAlert();
             }
 
@@ -197,16 +196,9 @@ public class MainActivity extends Activity {
                     (currentLocation.getLatitude() - (currentLocation.getAccuracy()/111111.0) < originalLocation.getLatitude())){
                 if((currentLocation.getLongitude() + (currentLocation.getAccuracy()/111111.0) > originalLocation.getLongitude())&&
                         (currentLocation.getLongitude() - (currentLocation.getAccuracy()/111111.0) < originalLocation.getLongitude())) {
-                    //compares grv coordinates
-                    if(Math.abs((currentCoords[1] + 0.7) - (wallCoords[1] + 0.7)) > 0
-                            && Math.abs((currentCoords[1] + 0.7) - (wallCoords[1] + 0.7)) <= 2) {
-                        Log.d("", "close enuff, start tracking");
-                        if(performImageMatch())
-                            startTracking();
-                    }
-                    else {
-                        Log.d("", "aint enough,   FarAway");
-                    }
+                    Log.d("", "close enuff, start tracking");
+                    if(performImageMatch())
+                        startTracking();
                 }
             }
         }

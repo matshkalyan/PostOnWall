@@ -69,12 +69,21 @@ public class PicturePreview extends View {
 //        Log.d("", "setTransformMatrix: transformmat is: " + transformMat);
 
         //added for just rotation
-        double yaw=Math.atan2(transform[3],transform[0]);
-        double pitch=Math.atan2(-transform[6],Math.sqrt(transform[7]*transform[7]+transform[8]*transform[8]));
-        double roll=Math.atan2(transform[7],transform[8]);
+//        double yaw=Math.atan2(transform[3],transform[0]);
+//        double pitch=Math.atan2(-transform[6],Math.sqrt(transform[7]*transform[7]+transform[8]*transform[8]));
+//        double roll=Math.atan2(transform[7],transform[8]);
+
+        double yaw=Math.atan2(transform[6],transform[7]);
+        double pitch=Math.acos(transform[8]);
+        double roll=Math.atan2(transform[2],transform[5]);
+
 //        transformMat.postRotate((float)(roll*180.0/Math.PI));
         transformMat.setValues(new float[]{ident[0][0], ident[0][1], ident[0][2], ident[1][0], ident[1][1], ident[1][2], ident[2][0], ident[2][1], ident[2][2]});
-        transformMat.postRotate((float)(pitch * 180.0/Math.PI * Math.PI), parentWidth/2, parentHeight/2);
+
+        if(Math.abs(Math.PI - yaw) < 0.01 || Math.abs(-Math.PI - yaw) < 0.01)
+            transformMat.postRotate((float)(0), displaySize.x/2, displaySize.y/2);
+        else
+            transformMat.postRotate((float)(yaw * 180.0/Math.PI * 2), displaySize.x/2, displaySize.y/2);
 
         Log.d("", "setTransformMatrix: roll is: " + roll * 180.0/Math.PI );
 
