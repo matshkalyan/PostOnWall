@@ -1,15 +1,12 @@
 package com.example.iosuser11.postonwall;
 
 import android.app.Activity;
-import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 
-/**
- * Created by iosuser12 on 8/11/16.
- */
+
 public class GRVCoordinates implements SensorEventListener {
     SensorManager mSensorManager;
     private Sensor mSensor;
@@ -22,7 +19,7 @@ public class GRVCoordinates implements SensorEventListener {
         mSensorManager = (SensorManager) activity.getSystemService(activity.SENSOR_SERVICE);
         mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR);
 
-        mSensorManager.registerListener(this, mSensor, SensorManager.SENSOR_DELAY_GAME);
+        mSensorManager.registerListener(this, mSensor, SensorManager.SENSOR_DELAY_FASTEST);
     }
 
     public float[] getValues() {

@@ -36,6 +36,7 @@ import org.opencv.features2d.FeatureDetector;
 import org.opencv.imgproc.Imgproc;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.RunnableFuture;
 
@@ -260,7 +261,7 @@ public class MainActivity extends Activity {
         while(true) {
             if(!trackingState)
                 break;
-            wallCoords = currentCoords;
+//            wallCoords = currentCoords;
             currentCoords = grvCoords.getValues();
             float[] rotMatrix = new float[9];
             rotMatrix[0] = 1;
@@ -268,10 +269,25 @@ public class MainActivity extends Activity {
             rotMatrix[6] = 1;
             float[] orientMatrix = new float[3];    // yaw/pitch/roll
             SensorManager.getRotationMatrixFromVector(rotMatrix, new float[]{(currentCoords[0] - wallCoords[0]), (currentCoords[1] - wallCoords[1]), (currentCoords[2] - wallCoords[2]), (currentCoords[3] - wallCoords[3])});
-            SensorManager.getOrientation(rotMatrix, orientMatrix);
+//            SensorManager.getRotationMatrixFromVector(rotMatrix, currentCoords);
+
+//            SensorManager.getOrientation(rotMatrix, orientMatrix);
 //            double yaw=Math.atan2(rotMatrix[3],rotMatrix[0]);
-//            double pitch=Math.atan2(-rotMatrix[6],Math.sqrt(rotMatrix[7]*rotMatrix[7]+rotMatrix[8]*rotMatrix[8]);
+//            double pitch=Math.atan2(-rotMatrix[6],Math.sqrt(rotMatrix[7]*rotMatrix[7]+rotMatrix[8]*rotMatrix[8]));
 //            double roll=Math.atan2(rotMatrix[7],rotMatrix[8]);
+
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            Log.e("currentCoords", Arrays.toString(currentCoords));
+            Log.e("wallCoords", Arrays.toString(wallCoords));
+            Log.e("zibilCoords", Arrays.toString(rotMatrix));
+
+
+//            Log.e("zibil", Arrays.toString(rotMatrix));
             pictureView.setTransformMatrix(rotMatrix);
             runOnUiThread(new Runnable() {
                 @Override
@@ -279,6 +295,7 @@ public class MainActivity extends Activity {
                     pictureView.invalidate();
                 }
             });
+
         }
     }
 
@@ -290,7 +307,6 @@ public class MainActivity extends Activity {
             cameraPreview = new CameraPreview(getApplicationContext());
             wallView.addView(cameraPreview);
             pictureView = new PicturePreview(getApplicationContext(), cameraPreview.getmPreviewSize().width, cameraPreview.getmPreviewSize().height);
-//            pictureView.setParentSize(cameraPreview.getmPreviewSize().width, cameraPreview.getmPreviewSize().height);
             wallView.addView(pictureView);
             pictureView.bringToFront();
             cameraPermissionGranted = true;
@@ -336,7 +352,6 @@ public class MainActivity extends Activity {
                     cameraPermissionGranted = true;
                     wallView.addView(cameraPreview);
                     pictureView = new PicturePreview(getApplicationContext(), cameraPreview.getmPreviewSize().width, cameraPreview.getmPreviewSize().height);
-//                    pictureView.setParentSize(cameraPreview.getmPreviewSize().width, cameraPreview.getmPreviewSize().height);
                     wallView.addView(pictureView);
                     pictureView.bringToFront();
                     Log.d("", "onCreate: camerapreview added, coords of the wallview are: "+wallView.getPivotX()+" "+wallView.getPivotY());
