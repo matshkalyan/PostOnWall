@@ -2,13 +2,19 @@ package com.example.iosuser11.postonwall;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.ActivityManager;
+import android.content.Context;
+import android.content.pm.ConfigurationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Matrix;
+import android.graphics.PixelFormat;
 import android.hardware.Camera;
 import android.hardware.SensorManager;
 import android.location.Location;
+import android.opengl.GLSurfaceView;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -49,6 +55,8 @@ public class MainActivity extends Activity {
     private CameraPreview cameraPreview;
     private Camera.Size previewSize;
     private PicturePreview pictureView;
+    private GLSurfaceView glSurfaceView;
+    private boolean rendererSet = false;
     private Button post;
     private Button track;
     private Button stop;
@@ -86,12 +94,50 @@ public class MainActivity extends Activity {
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.activity_main);
         wallView = (FrameLayout) findViewById(R.id.wallView);
-        requestCameraPermission();
         post = (Button) findViewById(R.id.post);
         track = (Button) findViewById(R.id.track);
         stop = (Button) findViewById(R.id.stop);
         track.setVisibility(View.GONE);
         stop.setVisibility(View.GONE);
+
+        //Initializing and preparing the opengl
+        glSurfaceView = new GLSurfaceView(this);
+        // Check if the system supports OpenGL ES 2.0.
+        ActivityManager activityManager =
+                (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        ConfigurationInfo configurationInfo = activityManager
+                .getDeviceConfigurationInfo();
+
+        final boolean supportsEs2 =
+                configurationInfo.reqGlEsVersion >= 0x20000
+                        || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1
+                        && (Build.FINGERPRINT.startsWith("generic")
+                        || Build.FINGERPRINT.startsWith("unknown")
+                        || Build.MODEL.contains("google_sdk")
+                        || Build.MODEL.contains("Emulator")
+                        || Build.MODEL.contains("Android SDK built for x86")));
+
+        if (supportsEs2)
+        {
+            // Request an OpenGL ES 2.0 compatible context.
+            glSurfaceView.setEGLContextClientVersion(2);
+
+            // Assign our renderer.
+//            glSurfaceView.getHolder().setFormat(PixelFormat.RGB_565);
+            glSurfaceView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
+            glSurfaceView.setEGLConfigChooser(8,8,8,8,0,0
+            );
+            glSurfaceView.setZOrderOnTop(true);
+            glSurfaceView.setRenderer(new mRenderer(this));
+            rendererSet = true;
+        } else
+        {
+            Toast.makeText(this, "This device does not support OpenGL ES 2.0.",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        requestCameraPermission();
 
         //initialising orb stuff
         detector = FeatureDetector.create(FeatureDetector.ORB);
@@ -113,6 +159,7 @@ public class MainActivity extends Activity {
         descriptor = DescriptorExtractor.create(DescriptorExtractor.ORB);
         matcher = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE_HAMMINGLUT);
 
+        //ONCICK Listeners
         post.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -144,8 +191,8 @@ public class MainActivity extends Activity {
                 stop.setVisibility(View.GONE);
                 post.setVisibility(View.VISIBLE);
                 trackingState = false;
-                pictureView.reset();
-                pictureView.invalidate();
+//                pictureView.reset();
+//                pictureView.invalidate();
             }
         });
     }
@@ -164,7 +211,7 @@ public class MainActivity extends Activity {
 
 
         //grv coords of the original image
-        wallCoords = grvCoords.getValues();
+       // wallCoords = grvCoords.getValues();
 
         //GPS coords of the original image
         if(mGPSTracker.canGetLocation()){
@@ -261,12 +308,6 @@ public class MainActivity extends Activity {
             rotMatrix[6] = 1;
             float[] orientMatrix = new float[3];    // yaw/pitch/roll
             SensorManager.getRotationMatrixFromVector(rotMatrix, new float[]{(currentCoords[0] - wallCoords[0]), (currentCoords[1] - wallCoords[1]), (currentCoords[2] - wallCoords[2]), (currentCoords[3] - wallCoords[3])});
-//            SensorManager.getRotationMatrixFromVector(rotMatrix, currentCoords);
-
-//            SensorManager.getOrientation(rotMatrix, orientMatrix);
-//            double yaw=Math.atan2(rotMatrix[3],rotMatrix[0]);
-//            double pitch=Math.atan2(-rotMatrix[6],Math.sqrt(rotMatrix[7]*rotMatrix[7]+rotMatrix[8]*rotMatrix[8]));
-//            double roll=Math.atan2(rotMatrix[7],rotMatrix[8]);
 
             try {
                 Thread.sleep(10);
@@ -274,17 +315,13 @@ public class MainActivity extends Activity {
                 e.printStackTrace();
             }
 
-            Log.e("currentCoords", Arrays.toString(currentCoords));
-            Log.e("wallCoords", Arrays.toString(wallCoords));
-            Log.e("zibilCoords", Arrays.toString(rotMatrix));
 
 
-//            Log.e("zibil", Arrays.toString(rotMatrix));
-            pictureView.setTransformMatrix(rotMatrix);
+//            pictureView.setTransformMatrix(rotMatrix);
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    pictureView.invalidate();
+//                    pictureView.invalidate();
                 }
             });
 
@@ -298,9 +335,12 @@ public class MainActivity extends Activity {
         if (cameraPermissionCheck == PackageManager.PERMISSION_GRANTED) {
             cameraPreview = new CameraPreview(getApplicationContext());
             wallView.addView(cameraPreview);
-            pictureView = new PicturePreview(getApplicationContext(), cameraPreview.getmPreviewSize().width, cameraPreview.getmPreviewSize().height);
-            wallView.addView(pictureView);
-            pictureView.bringToFront();
+//            pictureView = new PicturePreview(getApplicationContext(), cameraPreview.getmPreviewSize().width, cameraPreview.getmPreviewSize().height);
+
+            wallView.addView(glSurfaceView);
+
+//            wallView.addView(pictureView);
+//            pictureView.bringToFront();
             cameraPermissionGranted = true;
             requestGPSPermission();
         } else if (cameraPermissionCheck != PackageManager.PERMISSION_GRANTED) {
@@ -343,9 +383,10 @@ public class MainActivity extends Activity {
                     cameraPreview = new CameraPreview(getApplicationContext());
                     cameraPermissionGranted = true;
                     wallView.addView(cameraPreview);
-                    pictureView = new PicturePreview(getApplicationContext(), cameraPreview.getmPreviewSize().width, cameraPreview.getmPreviewSize().height);
-                    wallView.addView(pictureView);
-                    pictureView.bringToFront();
+//                    pictureView = new PicturePreview(getApplicationContext(), cameraPreview.getmPreviewSize().width, cameraPreview.getmPreviewSize().height);
+//                    wallView.addView(pictureView);
+//                    pictureView.bringToFront();
+                    wallView.addView(glSurfaceView);
                     Log.d("", "onCreate: camerapreview added, coords of the wallview are: "+wallView.getPivotX()+" "+wallView.getPivotY());
                     requestGPSPermission();
                 } else {
