@@ -3,6 +3,7 @@ package com.example.iosuser11.postonwall;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.opengl.GLSurfaceView;
 import android.opengl.GLSurfaceView.Renderer;
 
 import com.example.iosuser11.postonwall.objects.Table;
@@ -22,7 +23,7 @@ import static android.opengl.Matrix.rotateM;
 import static android.opengl.Matrix.setIdentityM;
 import static android.opengl.Matrix.setLookAtM;
 
-public class mRenderer implements Renderer
+public class PictureRenderer implements GLSurfaceView.Renderer
 {
     private final Context context;
 
@@ -33,6 +34,8 @@ public class mRenderer implements Renderer
     private final float[] modelViewProjectionMatrix = new float[16];
     float[] mat = new float[16];
 
+    private boolean useCustomImge = false;
+    private Bitmap image;
 
     private Table table;
     private GRVCoordinates grvCoordinates;
@@ -41,10 +44,20 @@ public class mRenderer implements Renderer
 
     private int texture;
 
-    public mRenderer(Activity activity)
+    public PictureRenderer(Activity activity)
     {
         this.context = activity.getApplicationContext();
         grvCoordinates = new GRVCoordinates(activity);
+    }
+    public PictureRenderer(Activity activity, Bitmap image)
+    {
+
+        this.context = activity.getApplicationContext();
+
+        grvCoordinates = new GRVCoordinates(activity);
+
+        this.image = image;
+        useCustomImge = true;
     }
 
     @Override
@@ -54,9 +67,13 @@ public class mRenderer implements Renderer
 
         table = new Table();
 
-        textureProgram = new TextureShaderProgram(context);
 
-        texture = TextureHelper.loadTexture(context, R.drawable.picture1);
+
+        textureProgram = new TextureShaderProgram(context);
+//        if(useCustomImge)
+            texture = TextureHelper.loadTexture(context, image);
+//        else
+//            texture = TextureHelper.loadTexture(context, R.drawable.picture1);
     }
 
     @Override
@@ -84,7 +101,7 @@ public class mRenderer implements Renderer
 //                units above the x-z plane and 2.2 units back. In other words, everything in
 //                the scene will appear 1.2 units below you and 2.2 units in front of you.
 
-                0f, 0f, 2.8f,
+                0f, 0f, 6f,
 
 //                float centerX, centerY,centerZ
 //                This is where the eye is looking; this position will appear in the center of the scene.

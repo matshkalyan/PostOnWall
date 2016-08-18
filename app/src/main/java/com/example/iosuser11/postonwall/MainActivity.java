@@ -9,11 +9,8 @@ import android.content.pm.ConfigurationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
-import android.graphics.Matrix;
 import android.graphics.PixelFormat;
 import android.hardware.Camera;
-import android.hardware.SensorManager;
 import android.location.Location;
 import android.net.Uri;
 import android.opengl.GLSurfaceView;
@@ -50,9 +47,7 @@ import org.opencv.imgproc.Imgproc;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.RunnableFuture;
 
 /**
  * Created by iosuser11 on 8/10/16.
@@ -62,11 +57,11 @@ public class MainActivity extends Activity {
     private FrameLayout wallView;
     private CameraPreview cameraPreview;
     private Camera.Size previewSize;
-    private PicturePreview pictureView;
     private GLSurfaceView glSurfaceView;
-    private boolean rendererSet = false;
+    private PictureRenderer mRenderer;
     private Button post;
     private Switch tracking;
+
 
     //Image processing stuff
     Mat imgOriginal, imgCurrent;
@@ -92,9 +87,12 @@ public class MainActivity extends Activity {
     private boolean gpsPermissionGranted = false;
     private boolean trackingState = false;
     private boolean photoChosen = false;
+    private boolean rendererSet = false;
 
     //current chosen phot
     private Bitmap chosenImage;
+
+    //
 
 
     @Override
@@ -110,41 +108,42 @@ public class MainActivity extends Activity {
         tracking = (Switch) findViewById(R.id.tracking);
         tracking.setChecked(false);
 
-        //Initializing and preparing the opengl
-        glSurfaceView = new GLSurfaceView(this);
-        // Check if the system supports OpenGL ES 2.0.
-        ActivityManager activityManager =
-                (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-        ConfigurationInfo configurationInfo = activityManager
-                .getDeviceConfigurationInfo();
-
-        final boolean supportsEs2 =
-                configurationInfo.reqGlEsVersion >= 0x20000
-                        || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1
-                        && (Build.FINGERPRINT.startsWith("generic")
-                        || Build.FINGERPRINT.startsWith("unknown")
-                        || Build.MODEL.contains("google_sdk")
-                        || Build.MODEL.contains("Emulator")
-                        || Build.MODEL.contains("Android SDK built for x86")));
-
-        if (supportsEs2)
-        {
-            // Request an OpenGL ES 2.0 compatible context.
-            glSurfaceView.setEGLContextClientVersion(2);
-
-            // Assign our renderer.
-//            glSurfaceView.getHolder().setFormat(PixelFormat.RGB_565);
-            glSurfaceView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
-            glSurfaceView.setEGLConfigChooser(8,8,8,8,0,0
-            );
-            glSurfaceView.setZOrderOnTop(true);
-            glSurfaceView.setRenderer(new mRenderer(this));
-            rendererSet = true;
-        } else {
-            Toast.makeText(this, "This device does not support OpenGL ES 2.0.",
-                    Toast.LENGTH_LONG).show();
-            return;
-        }
+//        //Initializing and preparing the opengl
+//        glSurfaceView = new GLSurfaceView(this);
+//        mRenderer = new PictureRenderer(this);
+//        // Check if the system supports OpenGL ES 2.0.
+//        ActivityManager activityManager =
+//                (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+//        ConfigurationInfo configurationInfo = activityManager
+//                .getDeviceConfigurationInfo();
+//
+//        final boolean supportsEs2 =
+//                configurationInfo.reqGlEsVersion >= 0x20000
+//                        || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1
+//                        && (Build.FINGERPRINT.startsWith("generic")
+//                        || Build.FINGERPRINT.startsWith("unknown")
+//                        || Build.MODEL.contains("google_sdk")
+//                        || Build.MODEL.contains("Emulator")
+//                        || Build.MODEL.contains("Android SDK built for x86")));
+//
+//        if (supportsEs2)
+//        {
+//            // Request an OpenGL ES 2.0 compatible context.
+//            glSurfaceView.setEGLContextClientVersion(2);
+//
+//            // Assign our renderer.
+////            glSurfaceView.getHolder().setFormat(PixelFormat.RGB_565);
+//            glSurfaceView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
+//            glSurfaceView.setEGLConfigChooser(8,8,8,8,0,0
+//            );
+//            glSurfaceView.setZOrderOnTop(true);
+//            glSurfaceView.setRenderer(mRenderer);
+//            rendererSet = true;
+//        } else {
+//            Toast.makeText(this, "This device does not support OpenGL ES 2.0.",
+//                    Toast.LENGTH_LONG).show();
+//            return;
+//        }
 
         requestCameraPermission();
 
@@ -174,13 +173,18 @@ public class MainActivity extends Activity {
             public void onClick(View view) {
                 Log.d("", "onClick: text is: " + post.getText());
                 if(!photoChosen) {
+                    tracking.setChecked(false);
                     choosePhoto();
                     //choose a photo to post from the image gallery
                     post.setText("POST");
                     //start previewing the picture
+                    photoChosen = true;
                 } else {
                     //post the already chosen picture on the wall (save it as an object containing its GPS coordinates, keypoints, descriptors, add that object to the list of objects in the global variables)
                     capture();
+                    photoChosen = false;
+                    post.setText("CHOOSE IMAGE");
+                    tracking.setChecked(true);
                 }
             }
         });
@@ -260,13 +264,11 @@ public class MainActivity extends Activity {
                     // app-defined int constant. The callback method gets the
                     // result of the request.
                 }
-            }else{
+            } else{
                 ActivityCompat.requestPermissions(MainActivity.this,
-                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
-                        3);
+                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 3);
             }
-        }else {
-
+        } else {
             Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
             photoPickerIntent.setType("image/*");
             startActivityForResult(photoPickerIntent, 1);
@@ -373,34 +375,50 @@ public class MainActivity extends Activity {
     }
 
     void startTracking() {
-        while(true) {
-            if(!trackingState)
-                break;
-//            wallCoords = currentCoords;
-            currentCoords = grvCoords.getValues();
-            float[] rotMatrix = new float[9];
-            rotMatrix[0] = 1;
-            rotMatrix[3] = 1;
-            rotMatrix[6] = 1;
-            float[] orientMatrix = new float[3];    // yaw/pitch/roll
-            SensorManager.getRotationMatrixFromVector(rotMatrix, new float[]{(currentCoords[0] - wallCoords[0]), (currentCoords[1] - wallCoords[1]), (currentCoords[2] - wallCoords[2]), (currentCoords[3] - wallCoords[3])});
 
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+//        mRenderer.startTracking();
+        while (true) {
+            if (!trackingState)
+                break;
+            byte[] data = cameraPreview.getCurrentFrame();
+            Mat pre = new Mat(previewSize.height + previewSize.height / 2, previewSize.width, CvType.CV_8UC1);
+            pre.put(0, 0, data);
+            Imgproc.cvtColor(pre, imgCurrent, Imgproc.COLOR_YUV2GRAY_NV21);
+            Core.transpose(imgCurrent, imgCurrent);
+            Core.flip(imgCurrent, imgCurrent, 1);
+            detector.detect(imgCurrent, keypointsCurrent);
+            descriptor.compute(imgCurrent, keypointsCurrent, descriptorsCurrent);
+            matcher.match(descriptorsCurrent, descriptorsOriginal, matches);
+            List<DMatch> matchesList = matches.toList();
+            List<DMatch> matches_final = new ArrayList<DMatch>();
+            for (int i = 0; i < matchesList.size(); i++) {
+                if (matchesList.get(i).distance <= 40) {
+                    matches_final.add(matches.toList().get(i));
+                }
             }
 
-
-
-//            pictureView.setTransformMatrix(rotMatrix);
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-//                    pictureView.invalidate();
+            if (matches_final.size() > 10) {
+                List<Point> objpoints = new ArrayList<Point>();
+                List<Point> scenepoints = new ArrayList<Point>();
+                List<KeyPoint> keys1 = keypointsOriginal.toList();
+                List<KeyPoint> keys2 = keypointsCurrent.toList();
+                for (int i = 0; i < matches_final.size(); i++) {
+                    objpoints.add(keys1.get((matches_final.get(i)).queryIdx).pt);
+                    scenepoints.add(keys2.get((matches_final.get(i)).trainIdx).pt);
                 }
-            });
+                MatOfPoint2f obj = new MatOfPoint2f();
+                obj.fromList(objpoints);
+                MatOfPoint2f scene = new MatOfPoint2f();
+                scene.fromList(scenepoints);
 
+//                Mat affine = Imgproc.getAffineTransform(obj, scene);
+//                Point translate = new Point((float) affine.get(0, 2)[0], (float) affine.get(1, 2)[0]);
+
+                //use this to translate image
+
+
+//
+            }
         }
     }
 
@@ -412,9 +430,6 @@ public class MainActivity extends Activity {
             cameraPreview = new CameraPreview(getApplicationContext());
             wallView.addView(cameraPreview);
 //            pictureView = new PicturePreview(getApplicationContext(), cameraPreview.getmPreviewSize().width, cameraPreview.getmPreviewSize().height);
-
-            wallView.addView(glSurfaceView);
-
 //            wallView.addView(pictureView);
 //            pictureView.bringToFront();
             cameraPermissionGranted = true;
@@ -501,6 +516,7 @@ public class MainActivity extends Activity {
             }
         }
     }
+
     @Override
     protected void onActivityResult(int reqCode, int resultCode, Intent data) {
         super.onActivityResult(reqCode, resultCode, data);
@@ -513,6 +529,21 @@ public class MainActivity extends Activity {
                         final InputStream imageStream = getContentResolver().openInputStream(imageUri);
                         final Bitmap selectedImage = BitmapFactory.decodeStream(imageStream);
                         chosenImage = selectedImage;
+                        wallView.removeView(glSurfaceView);
+                        glSurfaceView = new GLSurfaceView(this);
+                        // Request an OpenGL ES 2.0 compatible context.
+                        glSurfaceView.setEGLContextClientVersion(2);
+                        // Assign our renderer.
+//            glSurfaceView.getHolder().setFormat(PixelFormat.RGB_565);
+                        glSurfaceView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
+                        glSurfaceView.setEGLConfigChooser(8,8,8,8,0,0);
+                        glSurfaceView.setZOrderOnTop(true);
+                        glSurfaceView.setRenderer(new PictureRenderer(this, chosenImage));
+                        rendererSet = true;
+
+                        wallView.addView(glSurfaceView);
+                        glSurfaceView.setZOrderOnTop(true);
+                        glSurfaceView.bringToFront();
                     } catch (FileNotFoundException e) {
                         e.printStackTrace();
                     }
