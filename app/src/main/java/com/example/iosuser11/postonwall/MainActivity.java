@@ -29,6 +29,10 @@ import android.widget.Switch;
 import android.widget.Toast;
 
 
+import com.example.iosuser11.postonwall.Network.Communicator;
+import com.example.iosuser11.postonwall.Network.CommunicatorPicsArt;
+import com.example.iosuser11.postonwall.ServerModels.Picture;
+
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
@@ -87,12 +91,21 @@ public class MainActivity extends Activity {
     private boolean photoChosen = false;
     private boolean rendererSet = false;
 
+    //FOR SERVER
+    private Communicator communicator;
+    private CommunicatorPicsArt communicatorPicsArt;
+    private Picture picture;
+
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         OpenCVLoader.initDebug();
+
+        //FOR SERVER
+        communicator = new Communicator();
+        communicatorPicsArt = new CommunicatorPicsArt();
 
         //UI stuff
         requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -228,6 +241,9 @@ public class MainActivity extends Activity {
 ////                pictureView.invalidate();
 //            }
 //        });
+
+        communicatorPicsArt.picsArtPictureGet();
+
     }
 
     private void choosePhoto() {
@@ -292,6 +308,9 @@ public class MainActivity extends Activity {
             //shows GPS  Settongs for the user to enable GPS
             mGPSTracker.showSettingsAlert();
         }
+
+        communicator.picturePost(picture);
+
     }
 
     private void findImages(){
@@ -368,6 +387,9 @@ public class MainActivity extends Activity {
     }
 
     void startTracking() {
+
+        communicator.pictureGet(picture.getCoordinates(), picture.getDistance());
+
 
 //        mRenderer.startTracking();
         while (true) {
