@@ -58,8 +58,6 @@ public class MainActivity extends Activity {
     private GLSurfaceView glSurfaceView;
     private boolean rendererSet = false;
     private Button post;
-    private Button track;
-    private Button stop;
 
     //Image processing stuff
     Mat imgOriginal, imgCurrent;
@@ -96,10 +94,6 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         wallView = (FrameLayout) findViewById(R.id.wallView);
         post = (Button) findViewById(R.id.post);
-        track = (Button) findViewById(R.id.track);
-        stop = (Button) findViewById(R.id.stop);
-        track.setVisibility(View.GONE);
-        stop.setVisibility(View.GONE);
 
         //Initializing and preparing the opengl
         glSurfaceView = new GLSurfaceView(this);
@@ -171,37 +165,37 @@ public class MainActivity extends Activity {
                     //start previewing the picture
                 } else {
                     //post the already chosen picture on the wall (save it as an object containing its GPS coordinates, keypoints, descriptors, add that object to the list of objects in the global variables)
+                    capture();
                 }
-                capture();
             }
         });
 
-        track.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                track.setVisibility(View.GONE);
-                stop.setVisibility(View.VISIBLE);
-                trackingState = true;
-                new AsyncTask<Void, Void, Void>() {
-                    @Override
-                    protected Void doInBackground(Void... voids) {
-                        findImages();
-                        return null;
-                    }
-                }.execute();
-            }
-        });
-
-        stop.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                stop.setVisibility(View.GONE);
-                post.setVisibility(View.VISIBLE);
-                trackingState = false;
-//                pictureView.reset();
-//                pictureView.invalidate();
-            }
-        });
+//        track.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                track.setVisibility(View.GONE);
+//                stop.setVisibility(View.VISIBLE);
+//                trackingState = true;
+//                new AsyncTask<Void, Void, Void>() {
+//                    @Override
+//                    protected Void doInBackground(Void... voids) {
+//                        findImages();
+//                        return null;
+//                    }
+//                }.execute();
+//            }
+//        });
+//
+//        stop.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                stop.setVisibility(View.GONE);
+//                post.setVisibility(View.VISIBLE);
+//                trackingState = false;
+////                pictureView.reset();
+////                pictureView.invalidate();
+//            }
+//        });
     }
 
     //posts the image on the wall, gets the original image descriptors, keypoints, grv etc.
