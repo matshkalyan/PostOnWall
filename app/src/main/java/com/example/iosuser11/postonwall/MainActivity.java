@@ -163,8 +163,14 @@ public class MainActivity extends Activity {
         post.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                post.setVisibility(View.GONE);
-                track.setVisibility(View.VISIBLE);
+                Log.d("", "onClick: text is: " + post.getText());
+                if(post.getText().toString() == "CHOOSE PHOTO") {
+                    //choose a photo to post from the image gallery
+                    post.setText("POST");
+                    //start previewing the picture
+                } else {
+                    //post the already chosen picture on the wall (save it as an object containing its GPS coordinates, keypoints, descriptors, add that object to the list of objects in the global variables)
+                }
                 capture();
             }
         });
