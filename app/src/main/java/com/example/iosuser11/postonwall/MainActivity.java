@@ -57,7 +57,7 @@ public class MainActivity extends Activity {
     private FrameLayout wallView;
     private CameraPreview cameraPreview;
     private Camera.Size previewSize;
-    private GLSurfaceView glSurfaceView;
+    private GLSurfaceView pictureView;
     private Button post;
     private Switch tracking;
 
@@ -103,7 +103,7 @@ public class MainActivity extends Activity {
         tracking.setChecked(false);
 
 //        //Initializing and preparing the opengl
-//        glSurfaceView = new GLSurfaceView(this);
+//        pictureView = new GLSurfaceView(this);
 //        mRenderer = new PictureRenderer(this);
 //        // Check if the system supports OpenGL ES 2.0.
 //        ActivityManager activityManager =
@@ -123,15 +123,14 @@ public class MainActivity extends Activity {
 //        if (supportsEs2)
 //        {
 //            // Request an OpenGL ES 2.0 compatible context.
-//            glSurfaceView.setEGLContextClientVersion(2);
+//            pictureView.setEGLContextClientVersion(2);
 //
 //            // Assign our renderer.
-////            glSurfaceView.getHolder().setFormat(PixelFormat.RGB_565);
-//            glSurfaceView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
-//            glSurfaceView.setEGLConfigChooser(8,8,8,8,0,0
+//            pictureView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
+//            pictureView.setEGLConfigChooser(8,8,8,8,0,0
 //            );
-//            glSurfaceView.setZOrderOnTop(true);
-//            glSurfaceView.setRenderer(mRenderer);
+//            pictureView.setZOrderOnTop(true);
+//            pictureView.setRenderer(mRenderer);
 //            rendererSet = true;
 //        } else {
 //            Toast.makeText(this, "This device does not support OpenGL ES 2.0.",
@@ -465,7 +464,7 @@ public class MainActivity extends Activity {
                     cameraPreview = new CameraPreview(getApplicationContext());
                     cameraPermissionGranted = true;
                     wallView.addView(cameraPreview);
-                    wallView.addView(glSurfaceView);
+                    wallView.addView(pictureView);
                     Log.d("", "onCreate: camerapreview added, coords of the wallview are: "+wallView.getPivotX()+" "+wallView.getPivotY());
                     requestGPSPermission();
                 } else {
@@ -514,24 +513,23 @@ public class MainActivity extends Activity {
                 if (resultCode == RESULT_OK) {
                         final Uri imageUri = data.getData();
                     final InputStream imageStream;
-                    wallView.removeView(glSurfaceView);
-                    glSurfaceView = new GLSurfaceView(this);
+                    wallView.removeView(pictureView);
+                    pictureView = new GLSurfaceView(this);
                     // Request an OpenGL ES 2.0 compatible context.
-                    glSurfaceView.setEGLContextClientVersion(2);
+                    pictureView.setEGLContextClientVersion(2);
                     // Assign our renderer.
-//            glSurfaceView.getHolder().setFormat(PixelFormat.RGB_565);
-                    glSurfaceView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
-                    glSurfaceView.setEGLConfigChooser(8,8,8,8,0,0);
-                    glSurfaceView.setZOrderOnTop(true);
+                    pictureView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
+                    pictureView.setEGLConfigChooser(8,8,8,8,0,0);
+                    pictureView.setZOrderOnTop(true);
                     rendererSet = true;
 
-                    wallView.addView(glSurfaceView);
-                    glSurfaceView.setZOrderOnTop(true);
-                    glSurfaceView.bringToFront();
+                    wallView.addView(pictureView);
+                    pictureView.setZOrderOnTop(true);
+                    pictureView.bringToFront();
                     try {
                         imageStream = getContentResolver().openInputStream(imageUri);
                         Bitmap selectedImage = BitmapFactory.decodeStream(imageStream);
-                        glSurfaceView.setRenderer(new PictureRenderer(this, selectedImage));
+                        pictureView.setRenderer(new PictureRenderer(this, selectedImage));
                     } catch (FileNotFoundException e) {
                         e.printStackTrace();
                     }
