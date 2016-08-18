@@ -34,20 +34,21 @@
     <Switch
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="New Switch"
-        android:id="@+id/switch1"
+        android:id="@+id/tracking"
         android:layout_alignParentBottom="true"
         android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true" />
+        android:layout_alignParentEnd="true"
+        android:checked="false"
+        android:text="OFF" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceSmall"
-        android:text="Tracking state: OFF"
+        android:text="Tracking state:"
         android:id="@+id/textView"
-        android:layout_above="@+id/switch1"
-        android:layout_alignLeft="@+id/switch1"
-        android:layout_alignStart="@+id/switch1" />
+        android:layout_above="@+id/tracking"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true" />
 
 </RelativeLayout>
