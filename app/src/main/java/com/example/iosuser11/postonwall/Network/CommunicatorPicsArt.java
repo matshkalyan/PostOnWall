@@ -1,6 +1,6 @@
 package com.example.iosuser11.postonwall.Network;
 
-import com.example.iosuser11.postonwall.ServerModels.PicsArtPictureObject;
+import com.example.iosuser11.postonwall.ServerModels.PicsArtPicturesObject;
 import com.example.iosuser11.postonwall.ServerModels.PicsArtPicturesAPI;
 
 import retrofit.Callback;
@@ -19,10 +19,10 @@ public class CommunicatorPicsArt {
     public void picsArtPictureGet() {
         RestAdapter restAdapter = new RestAdapter.Builder().setEndpoint(ServerPicsArt_URL).setConverter(new JacksonConverter()).build();
         PicsArtPicturesAPI communicatorPicsArtInterface = restAdapter.create(PicsArtPicturesAPI.class);
-        Callback<PicsArtPictureObject> callback = new Callback<PicsArtPictureObject>() {
+        Callback<PicsArtPicturesObject> callback = new Callback<PicsArtPicturesObject>() {
 
             @Override
-            public void success(PicsArtPictureObject picsArtPictureObject, Response response) {
+            public void success(PicsArtPicturesObject picsArtPictureObject, Response response) {
                 System.out.println(picsArtPictureObject.toString());
             }
 

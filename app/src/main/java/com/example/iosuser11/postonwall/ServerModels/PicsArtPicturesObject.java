@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * Created by iosuser9 on 18.08.16.
  */
-public class PicsArtPictureObject {
+public class PicsArtPicturesObject {
     private List<PicsArtPictures> response = new ArrayList<>();
 
 
