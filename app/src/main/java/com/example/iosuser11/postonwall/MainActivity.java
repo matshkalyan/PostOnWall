@@ -83,6 +83,7 @@ public class MainActivity extends Activity {
     private boolean cameraPermissionGranted = false;
     private boolean gpsPermissionGranted = false;
     private boolean trackingState = false;
+    private boolean photoChosen = false;
 
 
     @Override
@@ -164,7 +165,7 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View view) {
                 Log.d("", "onClick: text is: " + post.getText());
-                if(post.getText().toString() == "CHOOSE PHOTO") {
+                if(!photoChosen) {
                     //choose a photo to post from the image gallery
                     post.setText("POST");
                     //start previewing the picture
