@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.opengl.GLSurfaceView;
-import android.opengl.GLSurfaceView.Renderer;
 
 import com.example.iosuser11.postonwall.objects.Table;
 import com.example.iosuser11.postonwall.programs.TextureShaderProgram;

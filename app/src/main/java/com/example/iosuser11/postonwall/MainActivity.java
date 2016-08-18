@@ -58,10 +58,8 @@ public class MainActivity extends Activity {
     private CameraPreview cameraPreview;
     private Camera.Size previewSize;
     private GLSurfaceView glSurfaceView;
-    private PictureRenderer mRenderer;
     private Button post;
     private Switch tracking;
-
 
     //Image processing stuff
     Mat imgOriginal, imgCurrent;
@@ -89,10 +87,6 @@ public class MainActivity extends Activity {
     private boolean photoChosen = false;
     private boolean rendererSet = false;
 
-    //current chosen phot
-    private Bitmap chosenImage;
-
-    //
 
 
     @Override
@@ -429,9 +423,6 @@ public class MainActivity extends Activity {
         if (cameraPermissionCheck == PackageManager.PERMISSION_GRANTED) {
             cameraPreview = new CameraPreview(getApplicationContext());
             wallView.addView(cameraPreview);
-//            pictureView = new PicturePreview(getApplicationContext(), cameraPreview.getmPreviewSize().width, cameraPreview.getmPreviewSize().height);
-//            wallView.addView(pictureView);
-//            pictureView.bringToFront();
             cameraPermissionGranted = true;
             requestGPSPermission();
         } else if (cameraPermissionCheck != PackageManager.PERMISSION_GRANTED) {
@@ -474,9 +465,6 @@ public class MainActivity extends Activity {
                     cameraPreview = new CameraPreview(getApplicationContext());
                     cameraPermissionGranted = true;
                     wallView.addView(cameraPreview);
-//                    pictureView = new PicturePreview(getApplicationContext(), cameraPreview.getmPreviewSize().width, cameraPreview.getmPreviewSize().height);
-//                    wallView.addView(pictureView);
-//                    pictureView.bringToFront();
                     wallView.addView(glSurfaceView);
                     Log.d("", "onCreate: camerapreview added, coords of the wallview are: "+wallView.getPivotX()+" "+wallView.getPivotY());
                     requestGPSPermission();
@@ -524,30 +512,29 @@ public class MainActivity extends Activity {
         switch (reqCode) {
             case 1:
                 if (resultCode == RESULT_OK) {
-                    try {
                         final Uri imageUri = data.getData();
-                        final InputStream imageStream = getContentResolver().openInputStream(imageUri);
-                        final Bitmap selectedImage = BitmapFactory.decodeStream(imageStream);
-                        chosenImage = selectedImage;
-                        wallView.removeView(glSurfaceView);
-                        glSurfaceView = new GLSurfaceView(this);
-                        // Request an OpenGL ES 2.0 compatible context.
-                        glSurfaceView.setEGLContextClientVersion(2);
-                        // Assign our renderer.
+                    final InputStream imageStream;
+                    wallView.removeView(glSurfaceView);
+                    glSurfaceView = new GLSurfaceView(this);
+                    // Request an OpenGL ES 2.0 compatible context.
+                    glSurfaceView.setEGLContextClientVersion(2);
+                    // Assign our renderer.
 //            glSurfaceView.getHolder().setFormat(PixelFormat.RGB_565);
-                        glSurfaceView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
-                        glSurfaceView.setEGLConfigChooser(8,8,8,8,0,0);
-                        glSurfaceView.setZOrderOnTop(true);
-                        glSurfaceView.setRenderer(new PictureRenderer(this, chosenImage));
-                        rendererSet = true;
+                    glSurfaceView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
+                    glSurfaceView.setEGLConfigChooser(8,8,8,8,0,0);
+                    glSurfaceView.setZOrderOnTop(true);
+                    rendererSet = true;
 
-                        wallView.addView(glSurfaceView);
-                        glSurfaceView.setZOrderOnTop(true);
-                        glSurfaceView.bringToFront();
+                    wallView.addView(glSurfaceView);
+                    glSurfaceView.setZOrderOnTop(true);
+                    glSurfaceView.bringToFront();
+                    try {
+                        imageStream = getContentResolver().openInputStream(imageUri);
+                        Bitmap selectedImage = BitmapFactory.decodeStream(imageStream);
+                        glSurfaceView.setRenderer(new PictureRenderer(this, selectedImage));
                     } catch (FileNotFoundException e) {
                         e.printStackTrace();
                     }
-
                 }
         }
     }
