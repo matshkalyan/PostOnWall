@@ -2,6 +2,7 @@ package com.example.iosuser11.postonwall;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.opengl.GLSurfaceView.Renderer;
 
 import com.example.iosuser11.postonwall.objects.Table;
@@ -124,6 +125,9 @@ public class mRenderer implements Renderer
     }
     public void updateRotationMat(float[] mat){
 
+    }
+    public void updateTextureImage(Bitmap bitmap){
+        texture = TextureHelper.loadTexture(context,bitmap);
     }
 
     private void positionTableInScene()
