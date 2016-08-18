@@ -26,7 +26,9 @@ import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.FrameLayout;
+import android.widget.Switch;
 import android.widget.Toast;
 
 
@@ -64,6 +66,7 @@ public class MainActivity extends Activity {
     private GLSurfaceView glSurfaceView;
     private boolean rendererSet = false;
     private Button post;
+    private Switch tracking;
 
     //Image processing stuff
     Mat imgOriginal, imgCurrent;
@@ -104,6 +107,8 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         wallView = (FrameLayout) findViewById(R.id.wallView);
         post = (Button) findViewById(R.id.post);
+        tracking = (Switch) findViewById(R.id.tracking);
+        tracking.setChecked(false);
 
         //Initializing and preparing the opengl
         glSurfaceView = new GLSurfaceView(this);
@@ -135,8 +140,7 @@ public class MainActivity extends Activity {
             glSurfaceView.setZOrderOnTop(true);
             glSurfaceView.setRenderer(new mRenderer(this));
             rendererSet = true;
-        } else
-        {
+        } else {
             Toast.makeText(this, "This device does not support OpenGL ES 2.0.",
                     Toast.LENGTH_LONG).show();
             return;
@@ -180,6 +184,26 @@ public class MainActivity extends Activity {
                 }
             }
         });
+
+        tracking.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+                if(isChecked) {
+                    trackingState = true;
+                    new AsyncTask<Void, Void, Void>() {
+                        @Override
+                        protected Void doInBackground(Void... voids) {
+                            findImages();
+                            return null;
+                        }
+                    }.execute();
+                } else {
+                    trackingState = false;
+                }
+            }
+        });
+
+
 
 //        track.setOnClickListener(new View.OnClickListener() {
 //            @Override
