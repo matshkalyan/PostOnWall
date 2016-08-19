@@ -21,6 +21,7 @@ import static android.opengl.Matrix.multiplyMM;
 import static android.opengl.Matrix.rotateM;
 import static android.opengl.Matrix.setIdentityM;
 import static android.opengl.Matrix.setLookAtM;
+import static android.opengl.Matrix.transposeM;
 
 public class PictureRenderer implements GLSurfaceView.Renderer
 {
@@ -31,7 +32,9 @@ public class PictureRenderer implements GLSurfaceView.Renderer
     private final float[] viewMatrix = new float[16];
     private final float[] viewProjectionMatrix = new float[16];
     private final float[] modelViewProjectionMatrix = new float[16];
+
     float[] mat = new float[16];
+
 
     private boolean useCustomImge = false;
     private Bitmap image;
@@ -124,7 +127,7 @@ public class PictureRenderer implements GLSurfaceView.Renderer
         // Clear the rendering surface.
         glClear(GL_COLOR_BUFFER_BIT);
         mat = grvCoordinates.getRotationMatrix();
-
+        
         float[] tmp = new float [16];
 
         multiplyMM(tmp, 0, viewMatrix, 0, mat, 0);
