@@ -292,15 +292,15 @@ public class MainActivity extends Activity {
             }
 
             //checks for gps location converts accuracy meters to lat/lon
-//            if((currentLocation.getLatitude() + (currentLocation.getAccuracy()/111111.0) > originalLocation.getLatitude())&&
-//                    (currentLocation.getLatitude() - (currentLocation.getAccuracy()/111111.0) < originalLocation.getLatitude())){
-//                if((currentLocation.getLongitude() + (currentLocation.getAccuracy()/111111.0) > originalLocation.getLongitude())&&
-//                        (currentLocation.getLongitude() - (currentLocation.getAccuracy()/111111.0) < originalLocation.getLongitude())) {
+            if((currentLocation.getLatitude() + (currentLocation.getAccuracy()/111111.0) > originalLocation.getLatitude())&&
+                    (currentLocation.getLatitude() - (currentLocation.getAccuracy()/111111.0) < originalLocation.getLatitude())){
+                if((currentLocation.getLongitude() + (currentLocation.getAccuracy()/111111.0) > originalLocation.getLongitude())&&
+                        (currentLocation.getLongitude() - (currentLocation.getAccuracy()/111111.0) < originalLocation.getLongitude())) {
                     Log.d("", "close enuff, start tracking");
                     if(performImageMatch())
                         startTracking();
-//                }
-//            }
+                }
+            }
         }
     }
 
@@ -323,29 +323,29 @@ public class MainActivity extends Activity {
             }
         }
 
-//        if (matches_final.size()>4){
-//            List<Point> objpoints = new ArrayList<Point>();
-//            List<Point> scenepoints = new ArrayList<Point>();
-//            List<KeyPoint> keys1 = keypointsOriginal.toList();
-//            List<KeyPoint> keys2 = keypointsCurrent.toList();
-//            for(int i=0; i < matches_final.size(); i++) {
-//                objpoints.add(keys1.get((matches_final.get(i)).queryIdx).pt);
-//                scenepoints.add(keys2.get((matches_final.get(i)).trainIdx).pt);
-//            }
-//            MatOfPoint2f obj = new MatOfPoint2f();
-//            obj.fromList(objpoints);
-//            MatOfPoint2f scene = new MatOfPoint2f();
-//            scene.fromList(scenepoints);
+        if (matches_final.size()>4){
+            List<Point> objpoints = new ArrayList<Point>();
+            List<Point> scenepoints = new ArrayList<Point>();
+            List<KeyPoint> keys1 = keypointsOriginal.toList();
+            List<KeyPoint> keys2 = keypointsCurrent.toList();
+            for(int i=0; i < matches_final.size(); i++) {
+                objpoints.add(keys1.get((matches_final.get(i)).queryIdx).pt);
+                scenepoints.add(keys2.get((matches_final.get(i)).trainIdx).pt);
+            }
+            MatOfPoint2f obj = new MatOfPoint2f();
+            obj.fromList(objpoints);
+            MatOfPoint2f scene = new MatOfPoint2f();
+            scene.fromList(scenepoints);
 
 //            Mat affine = Imgproc.getAffineTransform(obj,scene);
 //            Matrix transformMat = new Matrix();
 //            transformMat.setTranslate((float) affine.get(0,2)[0],(float) affine.get(1,2)[0]);
 //            pictureView.setTransformMatrix(transformMat);
             return true;
-//        }
-//        else {
-//            return false;
-//        }
+        }
+        else {
+            return false;
+        }
     }
 
     void startTracking() {
@@ -374,19 +374,19 @@ public class MainActivity extends Activity {
                 }
             }
 
-//            if (matches_final.size() > 10) {
-//                List<Point> objpoints = new ArrayList<Point>();
-//                List<Point> scenepoints = new ArrayList<Point>();
-//                List<KeyPoint> keys1 = keypointsOriginal.toList();
-//                List<KeyPoint> keys2 = keypointsCurrent.toList();
-//                for (int i = 0; i < matches_final.size(); i++) {
-//                    objpoints.add(keys1.get((matches_final.get(i)).queryIdx).pt);
-//                    scenepoints.add(keys2.get((matches_final.get(i)).trainIdx).pt);
-//                }
-//                MatOfPoint2f obj = new MatOfPoint2f();
-//                obj.fromList(objpoints);
-//                MatOfPoint2f scene = new MatOfPoint2f();
-//                scene.fromList(scenepoints);
+            if (matches_final.size() > 10) {
+                List<Point> objpoints = new ArrayList<Point>();
+                List<Point> scenepoints = new ArrayList<Point>();
+                List<KeyPoint> keys1 = keypointsOriginal.toList();
+                List<KeyPoint> keys2 = keypointsCurrent.toList();
+                for (int i = 0; i < matches_final.size(); i++) {
+                    objpoints.add(keys1.get((matches_final.get(i)).queryIdx).pt);
+                    scenepoints.add(keys2.get((matches_final.get(i)).trainIdx).pt);
+                }
+                MatOfPoint2f obj = new MatOfPoint2f();
+                obj.fromList(objpoints);
+                MatOfPoint2f scene = new MatOfPoint2f();
+                scene.fromList(scenepoints);
 
 //                Mat affine = Imgproc.getAffineTransform(obj, scene);
 //                Point translate = new Point((float) affine.get(0, 2)[0], (float) affine.get(1, 2)[0]);
@@ -395,7 +395,7 @@ public class MainActivity extends Activity {
 
 
 //
-//            }
+            }
         }
     }
 
