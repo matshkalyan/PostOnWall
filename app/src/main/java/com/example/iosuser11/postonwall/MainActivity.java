@@ -97,10 +97,6 @@ public class MainActivity extends Activity {
     //FOR SERVER
     private Communicator communicator;
     private CommunicatorPicsArt communicatorPicsArt;
-    private Picture picture;
-
-
-
 
 
     @Override
@@ -278,8 +274,6 @@ public class MainActivity extends Activity {
             //shows GPS  Settongs for the user to enable GPS
             mGPSTracker.showSettingsAlert();
         }
-
-        communicator.picturePost(picture);
     }
 
     private void findImages(){
