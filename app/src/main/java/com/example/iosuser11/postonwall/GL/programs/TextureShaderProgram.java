@@ -1,4 +1,4 @@
-package com.example.iosuser11.postonwall.programs;
+package com.example.iosuser11.postonwall.GL.programs;
 
 import android.content.Context;
 

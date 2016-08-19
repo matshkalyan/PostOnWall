@@ -1,6 +1,6 @@
-package com.example.iosuser11.postonwall.data;
+package com.example.iosuser11.postonwall.GL.data;
 
-import com.example.iosuser11.postonwall.Constants;
+import com.example.iosuser11.postonwall.GL.Constants;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;

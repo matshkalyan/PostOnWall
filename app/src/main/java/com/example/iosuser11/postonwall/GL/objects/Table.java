@@ -1,8 +1,8 @@
-package com.example.iosuser11.postonwall.objects;
+package com.example.iosuser11.postonwall.GL.objects;
 
-import com.example.iosuser11.postonwall.Constants;
-import com.example.iosuser11.postonwall.data.VertexArray;
-import com.example.iosuser11.postonwall.programs.TextureShaderProgram;
+import com.example.iosuser11.postonwall.GL.Constants;
+import com.example.iosuser11.postonwall.GL.data.VertexArray;
+import com.example.iosuser11.postonwall.GL.programs.TextureShaderProgram;
 
 import static android.opengl.GLES20.GL_TRIANGLE_FAN;
 import static android.opengl.GLES20.glDrawArrays;

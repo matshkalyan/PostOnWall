@@ -27,9 +27,9 @@ import android.widget.Switch;
 import android.widget.Toast;
 
 
+import com.example.iosuser11.postonwall.GL.MyGyozalRenderer;
 import com.example.iosuser11.postonwall.Network.Communicator;
 import com.example.iosuser11.postonwall.Network.CommunicatorPicsArt;
-import com.example.iosuser11.postonwall.ServerModels.Picture;
 
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Core;
@@ -63,7 +63,7 @@ public class MainActivity extends Activity {
     private FrameLayout wallView;
     private CameraPreview cameraPreview;
     private PictureView pictureView;
-    private PictureRenderer pictureRenderer;
+    private MyGyozalRenderer myGyozalRenderer;
     private Button post;
     private Button cancel;
     private Switch tracking;
@@ -194,7 +194,7 @@ public class MainActivity extends Activity {
             public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                 if(isChecked) {
                     trackingState = true;
-                    pictureRenderer.startPttvel();
+                    myGyozalRenderer.startPttvel();
                     new AsyncTask<Void, Void, Void>() {
                         @Override
                         protected Void doInBackground(Void... voids) {
@@ -203,7 +203,7 @@ public class MainActivity extends Activity {
                         }
                     }.execute();
                 } else {
-                    pictureRenderer.stopPttvek();
+                    myGyozalRenderer.stopPttvek();
                     trackingState = false;
                 }
             }
@@ -516,8 +516,8 @@ public class MainActivity extends Activity {
                     try {
                         imageStream = getContentResolver().openInputStream(imageUri);
                         Bitmap selectedImage = BitmapFactory.decodeStream(imageStream);
-                        pictureRenderer = new PictureRenderer(this, selectedImage);
-                        pictureView.setRenderer(pictureRenderer);
+                        myGyozalRenderer = new MyGyozalRenderer(this, selectedImage);
+                        pictureView.setRenderer(myGyozalRenderer);
                     } catch (FileNotFoundException e) {
                         e.printStackTrace();
                     }

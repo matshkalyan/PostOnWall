@@ -1,9 +1,9 @@
-package com.example.iosuser11.postonwall.programs;
+package com.example.iosuser11.postonwall.GL.programs;
 
 import android.content.Context;
 
-import com.example.iosuser11.postonwall.util.ShaderHelper;
-import com.example.iosuser11.postonwall.util.TextResourceReader;
+import com.example.iosuser11.postonwall.GL.util.ShaderHelper;
+import com.example.iosuser11.postonwall.GL.util.TextResourceReader;
 
 import static android.opengl.GLES20.glUseProgram;
 
