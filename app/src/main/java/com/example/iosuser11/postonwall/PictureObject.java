@@ -6,7 +6,9 @@ import android.location.Location;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfKeyPoint;
 
-
+/**
+ * Created by iosuser11 on 8/19/16.
+ */
 public class PictureObject {
     private Location location;
     private MatOfKeyPoint keypoints;
@@ -25,6 +27,10 @@ public class PictureObject {
         descriptors = d;
     }
 
+    void setPicture(Bitmap p) {
+        picture = p;
+    }
+
     Location getLocation() {
         return location;
     }
@@ -35,5 +41,9 @@ public class PictureObject {
 
     Mat getDescriptors() {
         return descriptors;
+    }
+
+    Bitmap getPicture() {
+        return picture;
     }
 }

@@ -10,10 +10,8 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.PixelFormat;
-import android.hardware.Camera;
 import android.location.Location;
 import android.net.Uri;
-import android.opengl.GLSurfaceView;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -58,14 +56,16 @@ import java.util.List;
  */
 public class MainActivity extends Activity {
 
-    public static List<PictureObject> picturesList;
+    public static List<PictureObject> allPicturesList;
+    public static List<PictureObject> currentPicturesList;
 
     //UI stuff
     private FrameLayout wallView;
     private CameraPreview cameraPreview;
-    private Camera.Size previewSize;
     private PictureView pictureView;
+    private PictureRenderer pictureRenderer;
     private Button post;
+    private Button cancel;
     private Switch tracking;
 
     //Image processing stuff
@@ -101,12 +101,31 @@ public class MainActivity extends Activity {
 
 
 
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Check if the system supports OpenGL ES 2.0.
+        ActivityManager activityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        ConfigurationInfo configurationInfo = activityManager.getDeviceConfigurationInfo();
+        final boolean supportsEs2 =
+                configurationInfo.reqGlEsVersion >= 0x20000
+                        || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1
+                        && (Build.FINGERPRINT.startsWith("generic")
+                        || Build.FINGERPRINT.startsWith("unknown")
+                        || Build.MODEL.contains("google_sdk")
+                        || Build.MODEL.contains("Emulator")
+                        || Build.MODEL.contains("Android SDK built for x86")));
+        if (!supportsEs2) {
+            Toast.makeText(this, "This device does not support OpenGL ES 2.0.", Toast.LENGTH_LONG).show();
+            finish();
+        }
+
         OpenCVLoader.initDebug();
 
-        //FOR SERVER
+        //server
         communicator = new Communicator();
         communicatorPicsArt = new CommunicatorPicsArt();
 
@@ -115,44 +134,10 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         wallView = (FrameLayout) findViewById(R.id.wallView);
         post = (Button) findViewById(R.id.post);
+        cancel = (Button) findViewById(R.id.cancel);
+        cancel.setVisibility(View.GONE);
         tracking = (Switch) findViewById(R.id.tracking);
         tracking.setChecked(false);
-
-//        //Initializing and preparing the opengl
-//        pictureView = new GLSurfaceView(this);
-//        mRenderer = new PictureRenderer(this);
-//        // Check if the system supports OpenGL ES 2.0.
-//        ActivityManager activityManager =
-//                (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-//        ConfigurationInfo configurationInfo = activityManager
-//                .getDeviceConfigurationInfo();
-//
-//        final boolean supportsEs2 =
-//                configurationInfo.reqGlEsVersion >= 0x20000
-//                        || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1
-//                        && (Build.FINGERPRINT.startsWith("generic")
-//                        || Build.FINGERPRINT.startsWith("unknown")
-//                        || Build.MODEL.contains("google_sdk")
-//                        || Build.MODEL.contains("Emulator")
-//                        || Build.MODEL.contains("Android SDK built for x86")));
-//
-//        if (supportsEs2)
-//        {
-//            // Request an OpenGL ES 2.0 compatible context.
-//            pictureView.setEGLContextClientVersion(2);
-//
-//            // Assign our renderer.
-//            pictureView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
-//            pictureView.setEGLConfigChooser(8,8,8,8,0,0
-//            );
-//            pictureView.setZOrderOnTop(true);
-//            pictureView.setRenderer(mRenderer);
-//            rendererSet = true;
-//        } else {
-//            Toast.makeText(this, "This device does not support OpenGL ES 2.0.",
-//                    Toast.LENGTH_LONG).show();
-//            return;
-//        }
 
         requestCameraPermission();
 
@@ -190,11 +175,21 @@ public class MainActivity extends Activity {
                     photoChosen = true;
                 } else {
                     //post the already chosen picture on the wall (save it as an object containing its GPS coordinates, keypoints, descriptors, add that object to the list of objects in the global variables)
-                    capture();
+                    post();
                     photoChosen = false;
                     post.setText("CHOOSE IMAGE");
                     tracking.setChecked(true);
                 }
+            }
+        });
+
+        cancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                wallView.removeViewAt(1);
+                photoChosen = false;
+                post.setText("CHOOSE IMAGE");
+                cancel.setVisibility(View.GONE);
             }
         });
 
@@ -203,6 +198,7 @@ public class MainActivity extends Activity {
             public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                 if(isChecked) {
                     trackingState = true;
+                    pictureRenderer.startPttvel();
                     new AsyncTask<Void, Void, Void>() {
                         @Override
                         protected Void doInBackground(Void... voids) {
@@ -211,6 +207,7 @@ public class MainActivity extends Activity {
                         }
                     }.execute();
                 } else {
+                    pictureRenderer.stopPttvek();
                     trackingState = false;
                 }
             }
@@ -259,10 +256,9 @@ public class MainActivity extends Activity {
     }
 
     //posts the image on the wall, gets the original image descriptors, keypoints, grv etc.
-    private void capture(){
-        previewSize = cameraPreview.getmPreviewSize();
+    private void post(){
         byte[] data = cameraPreview.getCurrentFrame();
-        Mat pre = new Mat(previewSize.height+previewSize.height/2, previewSize.width, CvType.CV_8UC1);
+        Mat pre = new Mat(cameraPreview.getmPreviewSize().height+cameraPreview.getmPreviewSize().height/2, cameraPreview.getmPreviewSize().width, CvType.CV_8UC1);
         pre.put(0, 0, data);
         Imgproc.cvtColor(pre,imgOriginal, Imgproc.COLOR_YUV2GRAY_NV21);
         Core.transpose(imgOriginal,imgOriginal);
@@ -284,7 +280,6 @@ public class MainActivity extends Activity {
         }
 
         communicator.picturePost(picture);
-
     }
 
     private void findImages(){
@@ -316,9 +311,8 @@ public class MainActivity extends Activity {
     }
 
     boolean performImageMatch(){
-        previewSize = cameraPreview.getmPreviewSize();
         byte[] data = cameraPreview.getCurrentFrame();
-        Mat pre = new Mat(previewSize.height+previewSize.height/2, previewSize.width, CvType.CV_8UC1);
+        Mat pre = new Mat(cameraPreview.getmPreviewSize().height+cameraPreview.getmPreviewSize().height/2, cameraPreview.getmPreviewSize().width, CvType.CV_8UC1);
         pre.put(0, 0, data);
         Imgproc.cvtColor(pre,imgCurrent, Imgproc.COLOR_YUV2GRAY_NV21);
         Core.transpose(imgCurrent,imgCurrent);
@@ -370,7 +364,7 @@ public class MainActivity extends Activity {
             if (!trackingState)
                 break;
             byte[] data = cameraPreview.getCurrentFrame();
-            Mat pre = new Mat(previewSize.height + previewSize.height / 2, previewSize.width, CvType.CV_8UC1);
+            Mat pre = new Mat(cameraPreview.getmPreviewSize().height + cameraPreview.getmPreviewSize().height / 2, cameraPreview.getmPreviewSize().width, CvType.CV_8UC1);
             pre.put(0, 0, data);
             Imgproc.cvtColor(pre, imgCurrent, Imgproc.COLOR_YUV2GRAY_NV21);
             Core.transpose(imgCurrent, imgCurrent);
@@ -462,7 +456,6 @@ public class MainActivity extends Activity {
                     cameraPreview = new CameraPreview(getApplicationContext());
                     cameraPermissionGranted = true;
                     wallView.addView(cameraPreview);
-                    wallView.addView(pictureView);
                     Log.d("", "onCreate: camerapreview added, coords of the wallview are: "+wallView.getPivotX()+" "+wallView.getPivotY());
                     requestGPSPermission();
                 } else {
@@ -509,6 +502,8 @@ public class MainActivity extends Activity {
         switch (reqCode) {
             case 1:
                 if (resultCode == RESULT_OK) {
+                    cancel.setVisibility(View.VISIBLE);
+
                     final Uri imageUri = data.getData();
                     final InputStream imageStream;
                     wallView.removeView(pictureView);
@@ -527,7 +522,8 @@ public class MainActivity extends Activity {
                     try {
                         imageStream = getContentResolver().openInputStream(imageUri);
                         Bitmap selectedImage = BitmapFactory.decodeStream(imageStream);
-                        pictureView.setRenderer(new PictureRenderer(this, selectedImage));
+                        pictureRenderer = new PictureRenderer(this, selectedImage);
+                        pictureView.setRenderer(pictureRenderer);
                     } catch (FileNotFoundException e) {
                         e.printStackTrace();
                     }
