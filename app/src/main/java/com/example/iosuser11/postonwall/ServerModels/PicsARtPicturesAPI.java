@@ -8,6 +8,5 @@ import retrofit.http.GET;
  */
 public interface PicsArtPicturesAPI {
     @GET("/photos/show/featured.json")
-    void getData(Callback<PicsArtPictureObject> serverResponseCallback);
-
+    void getData(Callback<PicsArtPicturesObject> serverResponseCallback);
 }
