@@ -20,9 +20,9 @@ import static android.opengl.GLES20.glClear;
 import static android.opengl.GLES20.glClearColor;
 import static android.opengl.GLES20.glViewport;
 import static android.opengl.Matrix.multiplyMM;
-import static android.opengl.Matrix.rotateM;
 import static android.opengl.Matrix.setIdentityM;
 import static android.opengl.Matrix.setLookAtM;
+import static android.opengl.Matrix.translateM;
 
 public class MyGyozalRenderer implements GLSurfaceView.Renderer
 {
@@ -33,6 +33,7 @@ public class MyGyozalRenderer implements GLSurfaceView.Renderer
     private final float[] viewMatrix = new float[16];
     private final float[] viewProjectionMatrix = new float[16];
     private final float[] modelViewProjectionMatrix = new float[16];
+
     float[] mat = new float[16];
     float[] matCache = new float[16];
     float[] tmp = new float[16];
@@ -56,6 +57,7 @@ public class MyGyozalRenderer implements GLSurfaceView.Renderer
         this.context = activity.getApplicationContext();
         grvCoordinates = new GRVCoordinates(activity);
     }
+
     public MyGyozalRenderer(Activity activity, Bitmap image)
     {
 
@@ -74,13 +76,8 @@ public class MyGyozalRenderer implements GLSurfaceView.Renderer
 
         table = new Table();
 
-
-
         textureProgram = new TextureShaderProgram(context);
-//        if(useCustomImge)
         texture = TextureHelper.loadTexture(context, image);
-//        else
-//            texture = TextureHelper.loadTexture(context, R.drawable.picture1);
     }
 
     @Override
@@ -88,7 +85,8 @@ public class MyGyozalRenderer implements GLSurfaceView.Renderer
     {
         // Set the OpenGL viewport to fill the entire surface.
         glViewport(0, 0, width, height);
-        MatrixHelper.perspectiveM(projectionMatrix, 45, (float) width / (float) height, 1f, 10f);
+
+        MatrixHelper.perspectiveM(projectionMatrix, 45, (float) width / (float) height, 1f, 1000f);
 
         setLookAtM(
 //                float[] rm
@@ -131,24 +129,33 @@ public class MyGyozalRenderer implements GLSurfaceView.Renderer
     {
         // Clear the rendering surface.
         glClear(GL_COLOR_BUFFER_BIT);
-        if(pttvel){
+
+        if(pttvel)
+        {
             mat = grvCoordinates.getRotationMatrix();
 
             Matrix.transposeM(matCacheTranspose, 0, matCache, 0);
             multiplyMM(result, 0, mat, 0, matCacheTranspose, 0);
 
-
             multiplyMM(tmp, 0, viewMatrix, 0, result, 0);
-            multiplyMM(viewProjectionMatrix, 0, projectionMatrix, 0, tmp, 0);
 
-            // Draw the table.
+//            tmp[3]  = tmp[3]  + 1 * result[8];
+//            tmp[7]  = tmp[7]  + 1 * result[9];
+//            tmp[11] = tmp[11] + 1 * result[10];
+
+            multiplyMM(viewProjectionMatrix, 0, projectionMatrix, 0, tmp, 0);
+            translateM(viewProjectionMatrix, 0, -6 * result[8], -6 * result[9], -6 * result[10]);
 
         }
-        else{
+
+        else
+        {
             matCache = grvCoordinates.getRotationMatrix();
             multiplyMM(viewProjectionMatrix, 0, projectionMatrix, 0, viewMatrix, 0);
 
         }
+
+        // Draw the table.
         positionTableInScene();
         textureProgram.useProgram();
         textureProgram.setUniforms(modelViewProjectionMatrix, texture);
@@ -156,15 +163,10 @@ public class MyGyozalRenderer implements GLSurfaceView.Renderer
         table.draw();
 
     }
-    public void updateRotationMat(float[] mat){
-
-    }
-    public void updateTextureImage(Bitmap bitmap){
-        texture = TextureHelper.loadTexture(context,bitmap);
-    }
 
     public void startPttvel(){pttvel = true;}
     public void stopPttvek(){pttvel = false;}
+
     private void positionTableInScene()
     {
         // The table is defined in terms of X & Y coordinates, so we rotate it
