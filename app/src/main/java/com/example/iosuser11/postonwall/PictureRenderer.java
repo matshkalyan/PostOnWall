@@ -48,6 +48,7 @@ public class PictureRenderer implements GLSurfaceView.Renderer
     private TextureShaderProgram textureProgram;
 
     private int texture;
+    private boolean pttvel = false;
 
     public PictureRenderer(Activity activity)
     {
@@ -87,7 +88,6 @@ public class PictureRenderer implements GLSurfaceView.Renderer
         // Set the OpenGL viewport to fill the entire surface.
         glViewport(0, 0, width, height);
         MatrixHelper.perspectiveM(projectionMatrix, 45, (float) width / (float) height, 1f, 10f);
-        matCache = grvCoordinates.getRotationMatrix();
 
         setLookAtM(
 //                float[] rm
@@ -130,21 +130,30 @@ public class PictureRenderer implements GLSurfaceView.Renderer
     {
         // Clear the rendering surface.
         glClear(GL_COLOR_BUFFER_BIT);
-        mat = grvCoordinates.getRotationMatrix();
+        if(pttvel){
+            mat = grvCoordinates.getRotationMatrix();
 
-        Matrix.transposeM(matCacheTranspose, 0, matCache, 0);
-        multiplyMM(result, 0, mat, 0, matCacheTranspose, 0);
+            Matrix.transposeM(matCacheTranspose, 0, matCache, 0);
+            multiplyMM(result, 0, mat, 0, matCacheTranspose, 0);
 
 
-        multiplyMM(tmp, 0, viewMatrix, 0, result, 0);
-        multiplyMM(viewProjectionMatrix, 0, projectionMatrix, 0, tmp, 0);
+            multiplyMM(tmp, 0, viewMatrix, 0, result, 0);
+            multiplyMM(viewProjectionMatrix, 0, projectionMatrix, 0, tmp, 0);
 
-        // Draw the table.
+            // Draw the table.
+
+        }
+        else{
+            matCache = grvCoordinates.getRotationMatrix();
+            multiplyMM(viewProjectionMatrix, 0, projectionMatrix, 0, viewMatrix, 0);
+
+        }
         positionTableInScene();
         textureProgram.useProgram();
         textureProgram.setUniforms(modelViewProjectionMatrix, texture);
         table.bindData(textureProgram);
         table.draw();
+
     }
     public void updateRotationMat(float[] mat){
 
@@ -153,6 +162,8 @@ public class PictureRenderer implements GLSurfaceView.Renderer
         texture = TextureHelper.loadTexture(context,bitmap);
     }
 
+    public void startPttvel(){pttvel = true;}
+    public void stopPttvek(){pttvel = false;}
     private void positionTableInScene()
     {
         // The table is defined in terms of X & Y coordinates, so we rotate it
