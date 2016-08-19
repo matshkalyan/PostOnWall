@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.opengl.GLSurfaceView;
+import android.opengl.Matrix;
 
 import com.example.iosuser11.postonwall.objects.Table;
 import com.example.iosuser11.postonwall.programs.TextureShaderProgram;
@@ -21,7 +22,6 @@ import static android.opengl.Matrix.multiplyMM;
 import static android.opengl.Matrix.rotateM;
 import static android.opengl.Matrix.setIdentityM;
 import static android.opengl.Matrix.setLookAtM;
-import static android.opengl.Matrix.transposeM;
 
 public class PictureRenderer implements GLSurfaceView.Renderer
 {
@@ -32,9 +32,12 @@ public class PictureRenderer implements GLSurfaceView.Renderer
     private final float[] viewMatrix = new float[16];
     private final float[] viewProjectionMatrix = new float[16];
     private final float[] modelViewProjectionMatrix = new float[16];
-
     float[] mat = new float[16];
+    float[] matCache = new float[16];
+    float[] tmp = new float[16];
 
+    float[] matCacheTranspose = new float[16];
+    float[] result = new float[16];
 
     private boolean useCustomImge = false;
     private Bitmap image;
@@ -73,7 +76,7 @@ public class PictureRenderer implements GLSurfaceView.Renderer
 
         textureProgram = new TextureShaderProgram(context);
 //        if(useCustomImge)
-            texture = TextureHelper.loadTexture(context, image);
+        texture = TextureHelper.loadTexture(context, image);
 //        else
 //            texture = TextureHelper.loadTexture(context, R.drawable.picture1);
     }
@@ -84,6 +87,7 @@ public class PictureRenderer implements GLSurfaceView.Renderer
         // Set the OpenGL viewport to fill the entire surface.
         glViewport(0, 0, width, height);
         MatrixHelper.perspectiveM(projectionMatrix, 45, (float) width / (float) height, 1f, 10f);
+        matCache = grvCoordinates.getRotationMatrix();
 
         setLookAtM(
 //                float[] rm
@@ -127,12 +131,12 @@ public class PictureRenderer implements GLSurfaceView.Renderer
         // Clear the rendering surface.
         glClear(GL_COLOR_BUFFER_BIT);
         mat = grvCoordinates.getRotationMatrix();
-        
-        float[] tmp = new float [16];
 
-        multiplyMM(tmp, 0, viewMatrix, 0, mat, 0);
+        Matrix.transposeM(matCacheTranspose, 0, matCache, 0);
+        multiplyMM(result, 0, mat, 0, matCacheTranspose, 0);
 
-        // Multiply the view and projection matrices together.
+
+        multiplyMM(tmp, 0, viewMatrix, 0, result, 0);
         multiplyMM(viewProjectionMatrix, 0, projectionMatrix, 0, tmp, 0);
 
         // Draw the table.
@@ -154,7 +158,7 @@ public class PictureRenderer implements GLSurfaceView.Renderer
         // The table is defined in terms of X & Y coordinates, so we rotate it
         // 90 degrees to lie flat on the XZ plane.
         setIdentityM(modelMatrix, 0);
-        rotateM(modelMatrix, 0, 90f, 1f, 0f, 0f);
+//        rotateM(modelMatrix, 0, 90f, 1f, 0f, 0f);
         multiplyMM(modelViewProjectionMatrix, 0, viewProjectionMatrix, 0, modelMatrix, 0);
     }
 

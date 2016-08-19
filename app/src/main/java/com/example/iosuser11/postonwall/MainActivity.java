@@ -57,11 +57,14 @@ import java.util.List;
  * Created by iosuser11 on 8/10/16.
  */
 public class MainActivity extends Activity {
+
+    public static List<PictureObject> picturesList;
+
     //UI stuff
     private FrameLayout wallView;
     private CameraPreview cameraPreview;
     private Camera.Size previewSize;
-    private GLSurfaceView pictureView;
+    private PictureView pictureView;
     private Button post;
     private Switch tracking;
 
@@ -213,35 +216,6 @@ public class MainActivity extends Activity {
             }
         });
 
-
-
-//        track.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                track.setVisibility(View.GONE);
-//                stop.setVisibility(View.VISIBLE);
-//                trackingState = true;
-//                new AsyncTask<Void, Void, Void>() {
-//                    @Override
-//                    protected Void doInBackground(Void... voids) {
-//                        findImages();
-//                        return null;
-//                    }
-//                }.execute();
-//            }
-//        });
-//
-//        stop.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                stop.setVisibility(View.GONE);
-//                post.setVisibility(View.VISIBLE);
-//                trackingState = false;
-////                pictureView.reset();
-////                pictureView.invalidate();
-//            }
-//        });
-
         communicatorPicsArt.picsArtPictureGet();
 
     }
@@ -298,7 +272,7 @@ public class MainActivity extends Activity {
 
 
         //grv coords of the original image
-       // wallCoords = grvCoords.getValues();
+        // wallCoords = grvCoords.getValues();
 
         //GPS coords of the original image
         if(mGPSTracker.canGetLocation()){
@@ -388,7 +362,7 @@ public class MainActivity extends Activity {
 
     void startTracking() {
 
-        communicator.pictureGet(picture.getCoordinates(), picture.getDistance());
+//        communicator.pictureGet(picture.getCoordinates(), picture.getDistance());
 
 
 //        mRenderer.startTracking();
@@ -466,8 +440,10 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (afterOnPause && cameraPermissionGranted)
+        if (afterOnPause && cameraPermissionGranted) {
             cameraPreview.initCamera();
+            pictureView = new PictureView(getApplicationContext(), cameraPreview.getmPreviewSize().width, cameraPreview.getmPreviewSize().height);
+        }
     }
 
     @Override
@@ -533,10 +509,10 @@ public class MainActivity extends Activity {
         switch (reqCode) {
             case 1:
                 if (resultCode == RESULT_OK) {
-                        final Uri imageUri = data.getData();
+                    final Uri imageUri = data.getData();
                     final InputStream imageStream;
                     wallView.removeView(pictureView);
-                    pictureView = new GLSurfaceView(this);
+//                    pictureView = new PictureView(getApplicationContext(), cameraPreview.getmPreviewSize().width, cameraPreview.getmPreviewSize().height);
                     // Request an OpenGL ES 2.0 compatible context.
                     pictureView.setEGLContextClientVersion(2);
                     // Assign our renderer.
