@@ -33,19 +33,12 @@ import com.example.iosuser11.postonwall.Network.Communicator;
 import com.example.iosuser11.postonwall.Network.CommunicatorPicsArt;
 
 import org.opencv.android.OpenCVLoader;
-import org.opencv.android.Utils;
 import org.opencv.core.Core;
-import org.opencv.core.CvException;
 import org.opencv.core.CvType;
 import org.opencv.core.DMatch;
-import org.opencv.core.KeyPoint;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfDMatch;
 import org.opencv.core.MatOfKeyPoint;
-import org.opencv.core.MatOfPoint2f;
-import org.opencv.core.Point;
-import org.opencv.core.Scalar;
-import org.opencv.core.Size;
 import org.opencv.features2d.DescriptorExtractor;
 import org.opencv.features2d.DescriptorMatcher;
 import org.opencv.features2d.FeatureDetector;
@@ -61,35 +54,31 @@ import java.util.List;
  */
 public class MainActivity extends Activity {
 
-    public static List<PictureObject> allPicturesList;
-    public static List<PictureObject> currentPicturesList;
+    public static ArrayList<PictureObject> allPicturesList;
+    public static ArrayList<PictureObject> currentPicturesList;
 
     //UI stuff
     private FrameLayout wallView;
     private CameraPreview cameraPreview;
     private PictureView pictureView;
-    private MyGyozalRenderer myGyozalRenderer;
+    private MyGyozalRenderer pictureRenderer;
     private Button post;
     private Button cancel;
     private Switch tracking;
+    private SeekBar seekBar;
 
     //Image processing stuff
-    Mat imgOriginal, imgCurrent;
+    Mat imgCurrent;
     FeatureDetector detector;
-    MatOfKeyPoint keypointsOriginal, keypointsCurrent;
+    MatOfKeyPoint keypointsCurrent;
     DescriptorExtractor descriptor;
-    Mat descriptorsOriginal, descriptorsCurrent;
+    Mat descriptorsCurrent;
     DescriptorMatcher matcher;
     MatOfDMatch matches;
 
     //Sensors
-    private GPSTracker mGPSTracker;
-    private Location originalLocation = null;
+    private GPSTracker gpsTracker;
     private Location currentLocation = null;
-    private GRVCoordinates grvCoords;
-    private float[] wallCoords;
-    private float[] currentCoords;
-
 
     //flags
     private boolean afterOnPause = false;
@@ -97,110 +86,86 @@ public class MainActivity extends Activity {
     private boolean gpsPermissionGranted = false;
     private boolean trackingState = false;
     private boolean photoChosen = false;
-    private boolean rendererSet = false;
+    private boolean imageFound = false;
 
     //FOR SERVER
     private Communicator communicator;
     private CommunicatorPicsArt communicatorPicsArt;
 
-
-//    test seekbar
-    SeekBar seekBar;
+    private Bitmap selectedPicture;
+    private int currentPictureIndex;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Check if the system supports OpenGL ES 2.0.
+        // Check if the system supports OpenGL ES 2.0 (must be done only the first time application runs)
         ActivityManager activityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
         ConfigurationInfo configurationInfo = activityManager.getDeviceConfigurationInfo();
-        final boolean supportsEs2 =
-                configurationInfo.reqGlEsVersion >= 0x20000
-                        || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1
-                        && (Build.FINGERPRINT.startsWith("generic")
-                        || Build.FINGERPRINT.startsWith("unknown")
-                        || Build.MODEL.contains("google_sdk")
-                        || Build.MODEL.contains("Emulator")
-                        || Build.MODEL.contains("Android SDK built for x86")));
+        final boolean supportsEs2 = configurationInfo.reqGlEsVersion >= 0x20000
+                || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1
+                && (Build.FINGERPRINT.startsWith("generic")
+                || Build.FINGERPRINT.startsWith("unknown")
+                || Build.MODEL.contains("google_sdk")
+                || Build.MODEL.contains("Emulator")
+                || Build.MODEL.contains("Android SDK built for x86")));
         if (!supportsEs2) {
             Toast.makeText(this, "This device does not support OpenGL ES 2.0.", Toast.LENGTH_LONG).show();
             finish();
         }
 
+        //initialize OpenCV library
         OpenCVLoader.initDebug();
 
         //server
         communicator = new Communicator();
         communicatorPicsArt = new CommunicatorPicsArt();
 
+        //initializing image lists
+        allPicturesList = new ArrayList<PictureObject>();
+        currentPicturesList = new ArrayList<PictureObject>();
+
         //UI stuff
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.activity_main);
-        wallView = (FrameLayout) findViewById(R.id.wallView);
         post = (Button) findViewById(R.id.post);
         cancel = (Button) findViewById(R.id.cancel);
         cancel.setVisibility(View.GONE);
         tracking = (Switch) findViewById(R.id.tracking);
         tracking.setChecked(false);
-
         seekBar = (SeekBar)findViewById(R.id.seekBar);
-        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
-                updateDistance(i);
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-
-            }
-        });
-
-        requestCameraPermission();
+        seekBar.setVisibility(View.GONE);
+        wallView = (FrameLayout) findViewById(R.id.wallView);
+        //request Camera, External memory and GPS persmissions, initialize the camera
+        requestPermissions();
 
         //initialising orb stuff
         detector = FeatureDetector.create(FeatureDetector.ORB);
         descriptor = DescriptorExtractor.create(DescriptorExtractor.ORB);;
         matcher = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE_HAMMINGLUT);
-        descriptorsCurrent = new Mat();
-        descriptorsOriginal = new Mat();
         keypointsCurrent = new MatOfKeyPoint();
-        keypointsOriginal = new MatOfKeyPoint();
+        descriptorsCurrent = new Mat();
         matches = new MatOfDMatch();
         imgCurrent = new Mat();
-        imgOriginal = new Mat();
-
-        //setting up sensors
-        grvCoords = new GRVCoordinates(this);
-
-        //setting up image processing  stuff
-        detector = FeatureDetector.create(FeatureDetector.ORB);
-        descriptor = DescriptorExtractor.create(DescriptorExtractor.ORB);
-        matcher = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE_HAMMINGLUT);
 
         //ONCICK Listeners
         post.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Log.d("", "onClick: text is: " + post.getText());
-                if(!photoChosen) {
+                if(!photoChosen) {      //the photo is not yet chosen, we clicked on the "choose photo"
                     tracking.setChecked(false);
-                    choosePhoto();
-                    //choose a photo to post from the image gallery
+                    chooseImage();
                     post.setText("POST");
-                    //start previewing the picture
                     photoChosen = true;
-                } else {
+                } else {        //the photo is already chosen, we clicked on the "Post"
                     //post the already chosen picture on the wall (save it as an object containing its GPS coordinates, keypoints, descriptors, add that object to the list of objects in the global variables)
-                    post();
+                    postImage();
                     photoChosen = false;
                     post.setText("CHOOSE IMAGE");
-                    tracking.setChecked(true);
+                    seekBar.setVisibility(View.GONE);
+//                    tracking.setChecked(true);
+                    pictureRenderer.startPttvel();
                 }
             }
         });
@@ -218,59 +183,89 @@ public class MainActivity extends Activity {
         tracking.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
-                if(isChecked) {
+                if(isChecked) {     //we enabled tracking
+                    wallView.removeView(pictureView);
+                    findImagesNearby();
                     trackingState = true;
-                    myGyozalRenderer.startPttvel();
                     new AsyncTask<Void, Void, Void>() {
                         @Override
                         protected Void doInBackground(Void... voids) {
-                            findImages();
+                            while(!imageFound)
+                                performImageMatch();
+//                            pictureRenderer.startPttvel();
+
                             return null;
                         }
                     }.execute();
-                } else {
-                    myGyozalRenderer.stopPttvek();
+
+                } else {        //we disabled tracking
+                    pictureRenderer.stopPttvel();
                     trackingState = false;
                 }
             }
         });
 
-        communicatorPicsArt.picsArtPictureGet();
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                updateDistance(i);
+            }
 
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
     }
 
-    private void choosePhoto() {
-        if (Build.VERSION.SDK_INT >= 23){
-            // Here, thisActivity is the current activity
-            if (ContextCompat.checkSelfPermission(MainActivity.this,
-                    Manifest.permission.READ_EXTERNAL_STORAGE)
-                    != PackageManager.PERMISSION_GRANTED) {
+    public void updateDistance(int d){
+        pictureRenderer.updateDistance(20-d);
+    }
 
-                // Should we show an explanation?
-                if (ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this,
-                        Manifest.permission.READ_EXTERNAL_STORAGE)) {
+    private void requestPermissions() {
+        ArrayList<String> permissionsToBeRequested = new ArrayList<String>();
+        if(ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED)
+            permissionsToBeRequested.add(Manifest.permission.CAMERA);
+        if(ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+            permissionsToBeRequested.add(Manifest.permission.ACCESS_FINE_LOCATION);
+        if(ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
+            permissionsToBeRequested.add(Manifest.permission.READ_EXTERNAL_STORAGE);
 
-                    // Show an expanation to the user *asynchronously* -- don't block
-                    // this thread waiting for the user's response! After the user
-                    // sees the explanation, try again to request the permission.
-
-                } else {
-
-                    // No explanation needed, we can request the permission.
-
-                    ActivityCompat.requestPermissions(MainActivity.this,
-                            new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
-                            3);
-
-                    // MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE is an
-                    // app-defined int constant. The callback method gets the
-                    // result of the request.
-                }
-            } else{
-                ActivityCompat.requestPermissions(MainActivity.this,
-                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 3);
-            }
+        if(permissionsToBeRequested.size() == 0) {
+            cameraPreview = new CameraPreview(getApplicationContext());
+            wallView.addView(cameraPreview);
+            gpsTracker = new GPSTracker(this);
         } else {
+            ActivityCompat.requestPermissions(this, permissionsToBeRequested.toArray(new String[0]), 1);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case 1: {
+                if(ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED
+                        || ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                        || ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                    Toast.makeText(getApplicationContext(), "Sorry, we need all of the permissions requested.", Toast.LENGTH_LONG).show();
+                    finish();
+                } else {
+                    cameraPreview = new CameraPreview(getApplicationContext());
+                    wallView.addView(cameraPreview);
+                    gpsTracker = new GPSTracker(this);
+                }
+                return;
+            }
+        }
+    }
+
+    private void chooseImage() {
+        if (Build.VERSION.SDK_INT >= 23) {
             Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
             photoPickerIntent.setType("image/*");
             startActivityForResult(photoPickerIntent, 1);
@@ -278,197 +273,158 @@ public class MainActivity extends Activity {
     }
 
     //posts the image on the wall, gets the original image descriptors, keypoints, grv etc.
-    private void post(){
+    private void postImage() {
+        cancel.setVisibility(View.GONE);
+
+        Mat imgOriginal = new Mat();
+        MatOfKeyPoint keypointsOriginal = new MatOfKeyPoint();
+        Mat descriptorsOriginal = new Mat();
+        Location locationOriginal = null;
+
         byte[] data = cameraPreview.getCurrentFrame();
         Mat pre = new Mat(cameraPreview.getmPreviewSize().height+cameraPreview.getmPreviewSize().height/2, cameraPreview.getmPreviewSize().width, CvType.CV_8UC1);
         pre.put(0, 0, data);
         Imgproc.cvtColor(pre,imgOriginal, Imgproc.COLOR_YUV2GRAY_NV21);
         Core.transpose(imgOriginal,imgOriginal);
         Core.flip(imgOriginal,imgOriginal,1);
-        Imgproc.resize(imgOriginal, imgOriginal,new Size(360,426),0,0,Imgproc.INTER_NEAREST);
-        Size size = imgOriginal.size();
-        Bitmap bmp = null;
-        Mat tmp = new Mat (360, 426, CvType.CV_8UC1, new Scalar(4));
-        try {
-            //Imgproc.cvtColor(seedsImage, tmp, Imgproc.COLOR_RGB2BGRA);
-            Imgproc.cvtColor(imgOriginal, tmp, Imgproc.COLOR_GRAY2RGBA, 4);
-            bmp = Bitmap.createBitmap(tmp.cols(), tmp.rows(), Bitmap.Config.ARGB_8888);
-            Utils.matToBitmap(tmp, bmp);
-        }
-        catch (CvException e){Log.d("Exception",e.getMessage());}
         detector.detect(imgOriginal,keypointsOriginal);
         descriptor.compute(imgOriginal, keypointsOriginal, descriptorsOriginal);
 
+        assert gpsTracker!=null;
 
-        //grv coords of the original image
-        // wallCoords = grvCoords.getValues();
+        PictureObject newPicture = new PictureObject(selectedPicture);
+        newPicture.setLocation(gpsTracker.getLocation());
+        newPicture.setKeypoints(keypointsOriginal);
+        newPicture.setDescriptors(descriptorsOriginal);
 
-        //GPS coords of the original image
-        if(mGPSTracker.canGetLocation()){
-            originalLocation = mGPSTracker.getLocation();
-        }
-        else{
-            //shows GPS  Settongs for the user to enable GPS
-            mGPSTracker.showSettingsAlert();
-        }
+        allPicturesList.add(newPicture);
     }
 
-    private void findImages(){
-        while (true) {
-            if(!trackingState)
-                break;
-            currentCoords = grvCoords.getValues();
-
-            //gets current location to compare with original image
-            if(mGPSTracker.canGetLocation()){
-                currentLocation = mGPSTracker.getLocation();
+    private void findImagesNearby() {
+        //filtering all the pictureobjects having location near our current location
+        Location originalLocation;
+        currentLocation = gpsTracker.getLocation();
+        for(int i = 0; i < allPicturesList.size(); i++) {
+            originalLocation = allPicturesList.get(i).getLocation();
+            if((currentLocation.getLatitude() + (currentLocation.getAccuracy()/111111.0) > originalLocation.getLatitude())&&
+                    (currentLocation.getLatitude() - (currentLocation.getAccuracy()/111111.0) < originalLocation.getLatitude())){
+                if((currentLocation.getLongitude() + (currentLocation.getAccuracy()/111111.0) > originalLocation.getLongitude())&&
+                        (currentLocation.getLongitude() - (currentLocation.getAccuracy()/111111.0) < originalLocation.getLongitude())) {
+                    currentPicturesList.add(allPicturesList.get(i));
+                }
             }
-            else{
-                Toast.makeText(this.getApplicationContext(),"dfuq, no location!", Toast.LENGTH_LONG).show();
-                mGPSTracker.showSettingsAlert();
-            }
-
-            //checks for gps location converts accuracy meters to lat/lon
-//            if((currentLocation.getLatitude() + (currentLocation.getAccuracy()/111111.0) > originalLocation.getLatitude())&&
-//                    (currentLocation.getLatitude() - (currentLocation.getAccuracy()/111111.0) < originalLocation.getLatitude())){
-//                if((currentLocation.getLongitude() + (currentLocation.getAccuracy()/111111.0) > originalLocation.getLongitude())&&
-//                        (currentLocation.getLongitude() - (currentLocation.getAccuracy()/111111.0) < originalLocation.getLongitude())) {
-//                    Log.d("", "close enuff, start tracking");
-                    if(performImageMatch())
-                        startTracking();
-//                }
-//            }
         }
     }
 
-    boolean performImageMatch(){
-//        byte[] data = cameraPreview.getCurrentFrame();
-//        Mat pre = new Mat(cameraPreview.getmPreviewSize().height+cameraPreview.getmPreviewSize().height/2, cameraPreview.getmPreviewSize().width, CvType.CV_8UC1);
-//        pre.put(0, 0, data);
-//        Imgproc.cvtColor(pre,imgCurrent, Imgproc.COLOR_YUV2GRAY_NV21);
-//        Core.transpose(imgCurrent,imgCurrent);
-//        Core.flip(imgCurrent,imgCurrent,1);
-//        detector.detect(imgCurrent,keypointsCurrent);
-//        descriptor.compute(imgCurrent, keypointsCurrent, descriptorsCurrent);
-//
-//        matcher.match(descriptorsCurrent,descriptorsOriginal,matches);
-//        List<DMatch> matchesList = matches.toList();
-//        List<DMatch> matches_final= new ArrayList<DMatch>();
-//        for(int i = 0; i < matchesList.size(); i++) {
-//            if (matchesList.get(i).distance <= 40) {
-//                matches_final.add(matches.toList().get(i));
-//            }
-//        }
+    void performImageMatch(){
+        byte[] data = cameraPreview.getCurrentFrame();
+        Mat pre = new Mat(cameraPreview.getmPreviewSize().height+cameraPreview.getmPreviewSize().height/2, cameraPreview.getmPreviewSize().width, CvType.CV_8UC1);
+        pre.put(0, 0, data);
+        Imgproc.cvtColor(pre,imgCurrent, Imgproc.COLOR_YUV2GRAY_NV21);
+        Core.transpose(imgCurrent,imgCurrent);
+        Core.flip(imgCurrent,imgCurrent,1);
+        detector.detect(imgCurrent,keypointsCurrent);
+        descriptor.compute(imgCurrent, keypointsCurrent, descriptorsCurrent);
 
-//        if (matches_final.size()>4){
-//            List<Point> objpoints = new ArrayList<Point>();
-//            List<Point> scenepoints = new ArrayList<Point>();
-//            List<KeyPoint> keys1 = keypointsOriginal.toList();
-//            List<KeyPoint> keys2 = keypointsCurrent.toList();
-//            for(int i=0; i < matches_final.size(); i++) {
-//                objpoints.add(keys1.get((matches_final.get(i)).queryIdx).pt);
-//                scenepoints.add(keys2.get((matches_final.get(i)).trainIdx).pt);
-//            }
-//            MatOfPoint2f obj = new MatOfPoint2f();
-//            obj.fromList(objpoints);
-//            MatOfPoint2f scene = new MatOfPoint2f();
-//            scene.fromList(scenepoints);
+        Mat descriptorsOriginal;
+        MatOfKeyPoint keypointsOriginal;
+        for(int i = 0; i < currentPicturesList.size(); i++) {
+            descriptorsOriginal = currentPicturesList.get(i).getDescriptors();
+            keypointsOriginal = currentPicturesList.get(i).getKeypoints();
 
-//            Mat affine = Imgproc.getAffineTransform(obj,scene);
-//            Matrix transformMat = new Matrix();
-//            transformMat.setTranslate((float) affine.get(0,2)[0],(float) affine.get(1,2)[0]);
-//            pictureView.setTransformMatrix(transformMat);
-            return true;
-//        }
-//        else {
-//            return false;
-//        }
-    }
+            matcher.match(descriptorsCurrent,descriptorsOriginal,matches);
+            List<DMatch> matchesList = matches.toList();
+            List<DMatch> matches_final= new ArrayList<DMatch>();
+            for(int j = 0; j < matchesList.size(); j++) {
+                if (matchesList.get(j).distance <= 40) {
+                    matches_final.add(matches.toList().get(j));
+                }
+            }
 
-    void startTracking() {
-
-//        communicator.pictureGet(picture.getCoordinates(), picture.getDistance());
+            if (matches_final.size() > 4) {
+                //we found the image on the wall currently being captured
+                imageFound = true;
+                currentPictureIndex = i;
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        pictureView = new PictureView(getApplicationContext(), cameraPreview.getmPreviewSize().width, cameraPreview.getmPreviewSize().height);
+                        pictureRenderer = new MyGyozalRenderer(MainActivity.this, currentPicturesList.get(currentPictureIndex).getPicture());
+                        pictureView.setEGLContextClientVersion(2);
+                        pictureView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
+                        pictureView.setEGLConfigChooser(8,8,8,8,0,0);
+                        pictureView.setZOrderOnTop(true);
+                        pictureView.setRenderer(pictureRenderer);
+                        wallView.addView(pictureView);
+                        pictureView.bringToFront();
+                        pictureRenderer.startPttvel();
+                    }
+                });
 
 
-//        mRenderer.startTracking();
-        while (true) {
-            if (!trackingState)
-                break;
-            byte[] data = cameraPreview.getCurrentFrame();
-            Mat pre = new Mat(cameraPreview.getmPreviewSize().height + cameraPreview.getmPreviewSize().height / 2, cameraPreview.getmPreviewSize().width, CvType.CV_8UC1);
-            pre.put(0, 0, data);
-            Imgproc.cvtColor(pre, imgCurrent, Imgproc.COLOR_YUV2GRAY_NV21);
-            Core.transpose(imgCurrent, imgCurrent);
-            Core.flip(imgCurrent, imgCurrent, 1);
-//            detector.detect(imgCurrent, keypointsCurrent);
-//            descriptor.compute(imgCurrent, keypointsCurrent, descriptorsCurrent);
-//            matcher.match(descriptorsCurrent, descriptorsOriginal, matches);
-//            List<DMatch> matchesList = matches.toList();
-//            List<DMatch> matches_final = new ArrayList<DMatch>();
-//            for (int i = 0; i < matchesList.size(); i++) {
-//                if (matchesList.get(i).distance <= 40) {
-//                    matches_final.add(matches.toList().get(i));
-//                }
-//            }
 
-//            if (matches_final.size() > 10) {
 //                List<Point> objpoints = new ArrayList<Point>();
 //                List<Point> scenepoints = new ArrayList<Point>();
 //                List<KeyPoint> keys1 = keypointsOriginal.toList();
 //                List<KeyPoint> keys2 = keypointsCurrent.toList();
-//                for (int i = 0; i < matches_final.size(); i++) {
-//                    objpoints.add(keys1.get((matches_final.get(i)).queryIdx).pt);
-//                    scenepoints.add(keys2.get((matches_final.get(i)).trainIdx).pt);
+//                for(int j = 0; j < matches_final.size(); j++) {
+//                    objpoints.add(keys1.get((matches_final.get(j)).queryIdx).pt);
+//                    scenepoints.add(keys2.get((matches_final.get(j)).trainIdx).pt);
 //                }
 //                MatOfPoint2f obj = new MatOfPoint2f();
 //                obj.fromList(objpoints);
 //                MatOfPoint2f scene = new MatOfPoint2f();
 //                scene.fromList(scenepoints);
-
-//                Mat affine = Imgproc.getAffineTransform(obj, scene);
-//                Point translate = new Point((float) affine.get(0, 2)[0], (float) affine.get(1, 2)[0]);
-
-                //use this to translate image
-
-
 //
-//            }
+//                Mat affine = Imgproc.getAffineTransform(obj,scene);
+//                Matrix transformMat = new Matrix();
+//                transformMat.setTranslate((float) affine.get(0,2)[0],(float) affine.get(1,2)[0]);
+//                pictureView.setTransformMatrix(transformMat);
+
+                break;
+            }
         }
     }
 
-    private void requestCameraPermission() {
-        int cameraPermissionCheck = ContextCompat.checkSelfPermission(this,
-                Manifest.permission.CAMERA);
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        switch (requestCode) {
+            case 1:
+                if (resultCode == RESULT_OK) {
+                    cancel.setVisibility(View.VISIBLE);
+                    seekBar.setVisibility(View.VISIBLE);
+                    final Uri imageUri = data.getData();
+                    final InputStream imageStream;
+                    wallView.removeView(pictureView);
+                    cameraPreview.initCamera();
 
-        if (cameraPermissionCheck == PackageManager.PERMISSION_GRANTED) {
-            cameraPreview = new CameraPreview(getApplicationContext());
-            wallView.addView(cameraPreview);
-            cameraPermissionGranted = true;
-            requestGPSPermission();
-        } else if (cameraPermissionCheck != PackageManager.PERMISSION_GRANTED) {
-            cameraPermissionGranted = false;
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 1);
+                    pictureView = new PictureView(getApplicationContext(), cameraPreview.getmPreviewSize().width, cameraPreview.getmPreviewSize().height);
+                    pictureView.setEGLContextClientVersion(2);
+                    pictureView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
+                    pictureView.setEGLConfigChooser(8,8,8,8,0,0);
+                    pictureView.setZOrderOnTop(true);
+                    wallView.addView(pictureView);
+                    pictureView.bringToFront();
+                    try {
+                        imageStream = getContentResolver().openInputStream(imageUri);
+                        selectedPicture = BitmapFactory.decodeStream(imageStream);
+                        pictureRenderer = new MyGyozalRenderer(this, selectedPicture);
+                        pictureView.setRenderer(pictureRenderer);
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                    cameraPreview.initCamera();
+                }
         }
     }
-
-    private void requestGPSPermission() {
-        int gpsPermissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
-        if (gpsPermissionCheck == PackageManager.PERMISSION_GRANTED) {
-            mGPSTracker = new GPSTracker(this);
-            gpsPermissionGranted = true;
-        } else if (gpsPermissionCheck != PackageManager.PERMISSION_GRANTED) {
-            gpsPermissionGranted = false;
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 2);
-        }
-    }
-
 
     @Override
     protected void onResume() {
         super.onResume();
         if (afterOnPause && cameraPermissionGranted) {
             cameraPreview.initCamera();
-            pictureView = new PictureView(getApplicationContext(), cameraPreview.getmPreviewSize().width, cameraPreview.getmPreviewSize().height);
+//            pictureView = new PictureView(getApplicationContext(), cameraPreview.getmPreviewSize().width, cameraPreview.getmPreviewSize().height);
         }
     }
 
@@ -478,93 +434,5 @@ public class MainActivity extends Activity {
         afterOnPause = true;
         if (cameraPermissionGranted)
             cameraPreview.pause();
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
-        switch (requestCode) {
-            case 1: {
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    cameraPreview = new CameraPreview(getApplicationContext());
-                    cameraPermissionGranted = true;
-                    wallView.addView(cameraPreview);
-                    Log.d("", "onCreate: camerapreview added, coords of the wallview are: "+wallView.getPivotX()+" "+wallView.getPivotY());
-                    requestGPSPermission();
-                } else {
-                    Toast.makeText(getApplicationContext(), "We need the camera, BYE!", Toast.LENGTH_LONG).show();
-                    finish();
-                }
-                return;
-            }
-            case 2: {
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    mGPSTracker = new GPSTracker(this);
-                    gpsPermissionGranted = true;
-                } else {
-                    Toast.makeText(getApplicationContext(), "We need the GPS, BYE!", Toast.LENGTH_LONG).show();
-                    gpsPermissionGranted = false;
-                    finish();
-                }
-                return;
-            }
-            case 3: {
-                // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-
-                    // permission was granted, yay! Do the
-                    // contacts-related task you need to do.
-                    Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
-                    photoPickerIntent.setType("image/*");
-                    startActivityForResult(photoPickerIntent, 1);
-                } else {
-
-                    // permission denied, boo! Disable the
-                    // functionality that depends on this permission.
-                }
-                return;
-            }
-        }
-    }
-
-    @Override
-    protected void onActivityResult(int reqCode, int resultCode, Intent data) {
-        super.onActivityResult(reqCode, resultCode, data);
-
-        switch (reqCode) {
-            case 1:
-                if (resultCode == RESULT_OK) {
-                    cancel.setVisibility(View.VISIBLE);
-
-                    final Uri imageUri = data.getData();
-                    final InputStream imageStream;
-                    wallView.removeView(pictureView);
-//                    pictureView = new PictureView(getApplicationContext(), cameraPreview.getmPreviewSize().width, cameraPreview.getmPreviewSize().height);
-                    // Request an OpenGL ES 2.0 compatible context.
-                    pictureView.setEGLContextClientVersion(2);
-                    // Assign our renderer.
-                    pictureView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
-                    pictureView.setEGLConfigChooser(8,8,8,8,0,0);
-                    pictureView.setZOrderOnTop(true);
-                    rendererSet = true;
-
-                    wallView.addView(pictureView);
-                    pictureView.setZOrderOnTop(true);
-                    pictureView.bringToFront();
-                    try {
-                        imageStream = getContentResolver().openInputStream(imageUri);
-                        Bitmap selectedImage = BitmapFactory.decodeStream(imageStream);
-                        myGyozalRenderer = new MyGyozalRenderer(this, selectedImage);
-                        pictureView.setRenderer(myGyozalRenderer);
-                    } catch (FileNotFoundException e) {
-                        e.printStackTrace();
-                    }
-                }
-        }
-    }
-
-
-    public void updateDistance(int d){
-        myGyozalRenderer.updateDistance(20-d);
     }
 }

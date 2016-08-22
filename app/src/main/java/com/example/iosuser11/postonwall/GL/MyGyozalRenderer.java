@@ -132,8 +132,7 @@ public class MyGyozalRenderer implements GLSurfaceView.Renderer
         // Clear the rendering surface.
         glClear(GL_COLOR_BUFFER_BIT);
 
-        if(pttvel)
-        {
+        if(pttvel) {
             mat = grvCoordinates.getRotationMatrix();
 
             Matrix.transposeM(matCacheTranspose, 0, matCache, 0);
@@ -147,19 +146,12 @@ public class MyGyozalRenderer implements GLSurfaceView.Renderer
 
             multiplyMM(viewProjectionMatrix, 0, projectionMatrix, 0, tmp, 0);
 
-            translateM(viewProjectionMatrix, 0, result[8],  result[9],  -(d) * result[10]);
+            translateM(viewProjectionMatrix, 0, result[8],  result[9],  -(d)*result[10]);
 //            translateM(viewProjectionMatrix, 0, -(6) * result[8], -(6) * result[9],  -(6) * result[10]);
-
-
-        }
-
-        else
-        {
+        } else {
             matCache = grvCoordinates.getRotationMatrix();
             multiplyMM(viewProjectionMatrix, 0, projectionMatrix, 0, viewMatrix, 0);
-            translateM(viewProjectionMatrix, 0, 0 , 0 ,  -10 );
-
-
+            translateM(viewProjectionMatrix, 0, 0 , 0 ,   -(d) );
         }
 
         // Draw the table.
@@ -171,7 +163,7 @@ public class MyGyozalRenderer implements GLSurfaceView.Renderer
     }
 
     public void startPttvel(){pttvel = true;}
-    public void stopPttvek(){pttvel = false;}
+    public void stopPttvel(){pttvel = false;}
 
     private void positionTableInScene()
     {
@@ -183,7 +175,6 @@ public class MyGyozalRenderer implements GLSurfaceView.Renderer
     }
 
     public void updateDistance(int d) {
-        this
-        .d =(float) d;
+        this.d =(float) d;
     }
 }

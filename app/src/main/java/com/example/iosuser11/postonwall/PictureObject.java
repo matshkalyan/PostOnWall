@@ -15,6 +15,10 @@ public class PictureObject {
     private Mat descriptors;
     private Bitmap picture;
 
+    PictureObject(Bitmap p) {
+        setPicture(p);
+    }
+
     void setLocation(Location l) {
         location = l;
     }
