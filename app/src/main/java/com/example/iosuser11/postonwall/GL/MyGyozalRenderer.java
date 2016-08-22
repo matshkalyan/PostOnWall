@@ -52,6 +52,8 @@ public class MyGyozalRenderer implements GLSurfaceView.Renderer
     private int texture;
     private boolean pttvel = false;
 
+    private float d = 10;
+
     public MyGyozalRenderer(Activity activity)
     {
         this.context = activity.getApplicationContext();
@@ -106,7 +108,7 @@ public class MyGyozalRenderer implements GLSurfaceView.Renderer
 //                units above the x-z plane and 2.2 units back. In other words, everything in
 //                the scene will appear 1.2 units below you and 2.2 units in front of you.
 
-                0f, 0f, 6f,
+                0f, 0f, 0.1f,
 
 //                float centerX, centerY,centerZ
 //                This is where the eye is looking; this position will appear in the center of the scene.
@@ -144,7 +146,10 @@ public class MyGyozalRenderer implements GLSurfaceView.Renderer
 //            tmp[11] = tmp[11] + 1 * result[10];
 
             multiplyMM(viewProjectionMatrix, 0, projectionMatrix, 0, tmp, 0);
-            translateM(viewProjectionMatrix, 0, -6 * result[8], -6 * result[9], -6 * result[10]);
+
+            translateM(viewProjectionMatrix, 0, result[8],  result[9],  -(d) * result[10]);
+//            translateM(viewProjectionMatrix, 0, -(6) * result[8], -(6) * result[9],  -(6) * result[10]);
+
 
         }
 
@@ -152,6 +157,8 @@ public class MyGyozalRenderer implements GLSurfaceView.Renderer
         {
             matCache = grvCoordinates.getRotationMatrix();
             multiplyMM(viewProjectionMatrix, 0, projectionMatrix, 0, viewMatrix, 0);
+            translateM(viewProjectionMatrix, 0, 0 , 0 ,  -10 );
+
 
         }
 
@@ -161,7 +168,6 @@ public class MyGyozalRenderer implements GLSurfaceView.Renderer
         textureProgram.setUniforms(modelViewProjectionMatrix, texture);
         table.bindData(textureProgram);
         table.draw();
-
     }
 
     public void startPttvel(){pttvel = true;}
@@ -176,4 +182,8 @@ public class MyGyozalRenderer implements GLSurfaceView.Renderer
         multiplyMM(modelViewProjectionMatrix, 0, viewProjectionMatrix, 0, modelMatrix, 0);
     }
 
+    public void updateDistance(int d) {
+        this
+        .d =(float) d;
+    }
 }

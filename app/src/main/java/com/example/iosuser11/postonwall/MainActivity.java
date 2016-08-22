@@ -23,6 +23,7 @@ import android.view.Window;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.FrameLayout;
+import android.widget.SeekBar;
 import android.widget.Switch;
 import android.widget.Toast;
 
@@ -32,7 +33,9 @@ import com.example.iosuser11.postonwall.Network.Communicator;
 import com.example.iosuser11.postonwall.Network.CommunicatorPicsArt;
 
 import org.opencv.android.OpenCVLoader;
+import org.opencv.android.Utils;
 import org.opencv.core.Core;
+import org.opencv.core.CvException;
 import org.opencv.core.CvType;
 import org.opencv.core.DMatch;
 import org.opencv.core.KeyPoint;
@@ -41,6 +44,8 @@ import org.opencv.core.MatOfDMatch;
 import org.opencv.core.MatOfKeyPoint;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
+import org.opencv.core.Scalar;
+import org.opencv.core.Size;
 import org.opencv.features2d.DescriptorExtractor;
 import org.opencv.features2d.DescriptorMatcher;
 import org.opencv.features2d.FeatureDetector;
@@ -99,6 +104,9 @@ public class MainActivity extends Activity {
     private CommunicatorPicsArt communicatorPicsArt;
 
 
+//    test seekbar
+    SeekBar seekBar;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -134,6 +142,24 @@ public class MainActivity extends Activity {
         cancel.setVisibility(View.GONE);
         tracking = (Switch) findViewById(R.id.tracking);
         tracking.setChecked(false);
+
+        seekBar = (SeekBar)findViewById(R.id.seekBar);
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                updateDistance(i);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
 
         requestCameraPermission();
 
@@ -259,6 +285,17 @@ public class MainActivity extends Activity {
         Imgproc.cvtColor(pre,imgOriginal, Imgproc.COLOR_YUV2GRAY_NV21);
         Core.transpose(imgOriginal,imgOriginal);
         Core.flip(imgOriginal,imgOriginal,1);
+        Imgproc.resize(imgOriginal, imgOriginal,new Size(360,426),0,0,Imgproc.INTER_NEAREST);
+        Size size = imgOriginal.size();
+        Bitmap bmp = null;
+        Mat tmp = new Mat (360, 426, CvType.CV_8UC1, new Scalar(4));
+        try {
+            //Imgproc.cvtColor(seedsImage, tmp, Imgproc.COLOR_RGB2BGRA);
+            Imgproc.cvtColor(imgOriginal, tmp, Imgproc.COLOR_GRAY2RGBA, 4);
+            bmp = Bitmap.createBitmap(tmp.cols(), tmp.rows(), Bitmap.Config.ARGB_8888);
+            Utils.matToBitmap(tmp, bmp);
+        }
+        catch (CvException e){Log.d("Exception",e.getMessage());}
         detector.detect(imgOriginal,keypointsOriginal);
         descriptor.compute(imgOriginal, keypointsOriginal, descriptorsOriginal);
 
@@ -292,60 +329,60 @@ public class MainActivity extends Activity {
             }
 
             //checks for gps location converts accuracy meters to lat/lon
-            if((currentLocation.getLatitude() + (currentLocation.getAccuracy()/111111.0) > originalLocation.getLatitude())&&
-                    (currentLocation.getLatitude() - (currentLocation.getAccuracy()/111111.0) < originalLocation.getLatitude())){
-                if((currentLocation.getLongitude() + (currentLocation.getAccuracy()/111111.0) > originalLocation.getLongitude())&&
-                        (currentLocation.getLongitude() - (currentLocation.getAccuracy()/111111.0) < originalLocation.getLongitude())) {
-                    Log.d("", "close enuff, start tracking");
+//            if((currentLocation.getLatitude() + (currentLocation.getAccuracy()/111111.0) > originalLocation.getLatitude())&&
+//                    (currentLocation.getLatitude() - (currentLocation.getAccuracy()/111111.0) < originalLocation.getLatitude())){
+//                if((currentLocation.getLongitude() + (currentLocation.getAccuracy()/111111.0) > originalLocation.getLongitude())&&
+//                        (currentLocation.getLongitude() - (currentLocation.getAccuracy()/111111.0) < originalLocation.getLongitude())) {
+//                    Log.d("", "close enuff, start tracking");
                     if(performImageMatch())
                         startTracking();
-                }
-            }
+//                }
+//            }
         }
     }
 
     boolean performImageMatch(){
-        byte[] data = cameraPreview.getCurrentFrame();
-        Mat pre = new Mat(cameraPreview.getmPreviewSize().height+cameraPreview.getmPreviewSize().height/2, cameraPreview.getmPreviewSize().width, CvType.CV_8UC1);
-        pre.put(0, 0, data);
-        Imgproc.cvtColor(pre,imgCurrent, Imgproc.COLOR_YUV2GRAY_NV21);
-        Core.transpose(imgCurrent,imgCurrent);
-        Core.flip(imgCurrent,imgCurrent,1);
-        detector.detect(imgCurrent,keypointsCurrent);
-        descriptor.compute(imgCurrent, keypointsCurrent, descriptorsCurrent);
+//        byte[] data = cameraPreview.getCurrentFrame();
+//        Mat pre = new Mat(cameraPreview.getmPreviewSize().height+cameraPreview.getmPreviewSize().height/2, cameraPreview.getmPreviewSize().width, CvType.CV_8UC1);
+//        pre.put(0, 0, data);
+//        Imgproc.cvtColor(pre,imgCurrent, Imgproc.COLOR_YUV2GRAY_NV21);
+//        Core.transpose(imgCurrent,imgCurrent);
+//        Core.flip(imgCurrent,imgCurrent,1);
+//        detector.detect(imgCurrent,keypointsCurrent);
+//        descriptor.compute(imgCurrent, keypointsCurrent, descriptorsCurrent);
+//
+//        matcher.match(descriptorsCurrent,descriptorsOriginal,matches);
+//        List<DMatch> matchesList = matches.toList();
+//        List<DMatch> matches_final= new ArrayList<DMatch>();
+//        for(int i = 0; i < matchesList.size(); i++) {
+//            if (matchesList.get(i).distance <= 40) {
+//                matches_final.add(matches.toList().get(i));
+//            }
+//        }
 
-        matcher.match(descriptorsCurrent,descriptorsOriginal,matches);
-        List<DMatch> matchesList = matches.toList();
-        List<DMatch> matches_final= new ArrayList<DMatch>();
-        for(int i = 0; i < matchesList.size(); i++) {
-            if (matchesList.get(i).distance <= 40) {
-                matches_final.add(matches.toList().get(i));
-            }
-        }
-
-        if (matches_final.size()>4){
-            List<Point> objpoints = new ArrayList<Point>();
-            List<Point> scenepoints = new ArrayList<Point>();
-            List<KeyPoint> keys1 = keypointsOriginal.toList();
-            List<KeyPoint> keys2 = keypointsCurrent.toList();
-            for(int i=0; i < matches_final.size(); i++) {
-                objpoints.add(keys1.get((matches_final.get(i)).queryIdx).pt);
-                scenepoints.add(keys2.get((matches_final.get(i)).trainIdx).pt);
-            }
-            MatOfPoint2f obj = new MatOfPoint2f();
-            obj.fromList(objpoints);
-            MatOfPoint2f scene = new MatOfPoint2f();
-            scene.fromList(scenepoints);
+//        if (matches_final.size()>4){
+//            List<Point> objpoints = new ArrayList<Point>();
+//            List<Point> scenepoints = new ArrayList<Point>();
+//            List<KeyPoint> keys1 = keypointsOriginal.toList();
+//            List<KeyPoint> keys2 = keypointsCurrent.toList();
+//            for(int i=0; i < matches_final.size(); i++) {
+//                objpoints.add(keys1.get((matches_final.get(i)).queryIdx).pt);
+//                scenepoints.add(keys2.get((matches_final.get(i)).trainIdx).pt);
+//            }
+//            MatOfPoint2f obj = new MatOfPoint2f();
+//            obj.fromList(objpoints);
+//            MatOfPoint2f scene = new MatOfPoint2f();
+//            scene.fromList(scenepoints);
 
 //            Mat affine = Imgproc.getAffineTransform(obj,scene);
 //            Matrix transformMat = new Matrix();
 //            transformMat.setTranslate((float) affine.get(0,2)[0],(float) affine.get(1,2)[0]);
 //            pictureView.setTransformMatrix(transformMat);
             return true;
-        }
-        else {
-            return false;
-        }
+//        }
+//        else {
+//            return false;
+//        }
     }
 
     void startTracking() {
@@ -363,30 +400,30 @@ public class MainActivity extends Activity {
             Imgproc.cvtColor(pre, imgCurrent, Imgproc.COLOR_YUV2GRAY_NV21);
             Core.transpose(imgCurrent, imgCurrent);
             Core.flip(imgCurrent, imgCurrent, 1);
-            detector.detect(imgCurrent, keypointsCurrent);
-            descriptor.compute(imgCurrent, keypointsCurrent, descriptorsCurrent);
-            matcher.match(descriptorsCurrent, descriptorsOriginal, matches);
-            List<DMatch> matchesList = matches.toList();
-            List<DMatch> matches_final = new ArrayList<DMatch>();
-            for (int i = 0; i < matchesList.size(); i++) {
-                if (matchesList.get(i).distance <= 40) {
-                    matches_final.add(matches.toList().get(i));
-                }
-            }
+//            detector.detect(imgCurrent, keypointsCurrent);
+//            descriptor.compute(imgCurrent, keypointsCurrent, descriptorsCurrent);
+//            matcher.match(descriptorsCurrent, descriptorsOriginal, matches);
+//            List<DMatch> matchesList = matches.toList();
+//            List<DMatch> matches_final = new ArrayList<DMatch>();
+//            for (int i = 0; i < matchesList.size(); i++) {
+//                if (matchesList.get(i).distance <= 40) {
+//                    matches_final.add(matches.toList().get(i));
+//                }
+//            }
 
-            if (matches_final.size() > 10) {
-                List<Point> objpoints = new ArrayList<Point>();
-                List<Point> scenepoints = new ArrayList<Point>();
-                List<KeyPoint> keys1 = keypointsOriginal.toList();
-                List<KeyPoint> keys2 = keypointsCurrent.toList();
-                for (int i = 0; i < matches_final.size(); i++) {
-                    objpoints.add(keys1.get((matches_final.get(i)).queryIdx).pt);
-                    scenepoints.add(keys2.get((matches_final.get(i)).trainIdx).pt);
-                }
-                MatOfPoint2f obj = new MatOfPoint2f();
-                obj.fromList(objpoints);
-                MatOfPoint2f scene = new MatOfPoint2f();
-                scene.fromList(scenepoints);
+//            if (matches_final.size() > 10) {
+//                List<Point> objpoints = new ArrayList<Point>();
+//                List<Point> scenepoints = new ArrayList<Point>();
+//                List<KeyPoint> keys1 = keypointsOriginal.toList();
+//                List<KeyPoint> keys2 = keypointsCurrent.toList();
+//                for (int i = 0; i < matches_final.size(); i++) {
+//                    objpoints.add(keys1.get((matches_final.get(i)).queryIdx).pt);
+//                    scenepoints.add(keys2.get((matches_final.get(i)).trainIdx).pt);
+//                }
+//                MatOfPoint2f obj = new MatOfPoint2f();
+//                obj.fromList(objpoints);
+//                MatOfPoint2f scene = new MatOfPoint2f();
+//                scene.fromList(scenepoints);
 
 //                Mat affine = Imgproc.getAffineTransform(obj, scene);
 //                Point translate = new Point((float) affine.get(0, 2)[0], (float) affine.get(1, 2)[0]);
@@ -395,7 +432,7 @@ public class MainActivity extends Activity {
 
 
 //
-            }
+//            }
         }
     }
 
@@ -424,6 +461,7 @@ public class MainActivity extends Activity {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 2);
         }
     }
+
 
     @Override
     protected void onResume() {
@@ -523,5 +561,10 @@ public class MainActivity extends Activity {
                     }
                 }
         }
+    }
+
+
+    public void updateDistance(int d){
+        myGyozalRenderer.updateDistance(20-d);
     }
 }

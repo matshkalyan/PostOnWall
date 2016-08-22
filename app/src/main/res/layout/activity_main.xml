@@ -26,7 +26,8 @@
         android:layout_width="match_parent"
         android:layout_height="50dp"
         android:layout_alignParentBottom="true"
-        android:background="#50ffffff" >
+        android:background="#50ffffff"
+        android:id="@+id/relativeLayout">
 
         <Button
             android:layout_width="wrap_content"
@@ -66,5 +67,15 @@
             android:layout_centerVertical="true" />
 
     </RelativeLayout>
+
+    <SeekBar
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/seekBar"
+        android:layout_above="@+id/relativeLayout"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        android:max="20"
+        android:progress="10" />
 
 </RelativeLayout>
