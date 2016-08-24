@@ -190,7 +190,6 @@ public class MainActivity extends Activity {
                     wallView.removeAllViews();
                     cameraPreview.initCamera();
                     wallView.addView(cameraPreview);
-
                     findImagesNearby();
                     messages.setVisibility(View.VISIBLE);
                     messages.setText("There are " + currentPicturesList.size() + " / " + allPicturesList.size() + " pictures posted nearby.");
@@ -198,25 +197,16 @@ public class MainActivity extends Activity {
                     new AsyncTask<Void, Void, Void>() {
                         @Override
                         protected Void doInBackground(Void... voids) {
-//                            while(!imageFound) {
-//                                performImageMatch();
-//                                try {
-//                                    Thread.sleep(10);
-//                                } catch (InterruptedException e) {
-//                                    e.printStackTrace();
-//                                }
-//                            }
-//                            pictureRenderer.attachToWall();
                             performImageMatch();
                             return null;
                         }
                     }.execute();
                 } else {        //we disabled tracking
+                    trackingState = false;
                     wallView.removeAllViews();
                     cameraPreview.initCamera();
                     wallView.addView(cameraPreview);
                     messages.setVisibility(View.GONE);
-                    trackingState = false;
                     imageFound = false;
                 }
             }
@@ -353,7 +343,7 @@ public class MainActivity extends Activity {
     }
 
     void performImageMatch(){
-        while(true) {
+        while(trackingState) {
             byte[] data = cameraPreview.getCurrentFrame();
             pre = new Mat(cameraPreview.getmPreviewSize().height+cameraPreview.getmPreviewSize().height/2, cameraPreview.getmPreviewSize().width, CvType.CV_8UC1);
             pre.put(0, 0, data);
