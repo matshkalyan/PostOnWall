@@ -33,6 +33,8 @@ import android.widget.Toast;
 import com.example.iosuser11.postonwall.GL.PictureRenderer;
 import com.example.iosuser11.postonwall.Network.Communicator;
 import com.example.iosuser11.postonwall.Network.CommunicatorPicsArt;
+import com.example.iosuser11.postonwall.ServerModels.PicsArtPictures;
+import com.example.iosuser11.postonwall.ServerModels.Picture;
 
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Core;
@@ -96,6 +98,7 @@ public class MainActivity extends Activity {
     //FOR SERVER
     private Communicator communicator;
     private CommunicatorPicsArt communicatorPicsArt;
+    private Picture picture;
 
     private Bitmap selectedPicture;
     private int currentPictureIndex;
@@ -228,6 +231,9 @@ public class MainActivity extends Activity {
 
             }
         });
+
+     //   communicatorPicsArt.picsArtPictureGet();
+
     }
 
     private void requestPermissions() {
@@ -324,9 +330,16 @@ public class MainActivity extends Activity {
         Log.d("", "postImage: seekbar progress is: ");
 
         allPicturesList.add(newPicture);
+
+        //Post image to Server
+      //  communicator.picturePost(picture);
     }
 
     private void findImagesNearby() {
+
+      //  communicator.pictureGet(picture.getCoordinates(), picture.getDistance());
+
+
         currentPicturesList = new ArrayList<>();
         Location originalLocation;
         currentLocation = gpsTracker.getLocation();
