@@ -1,11 +1,15 @@
 package com.example.iosuser11.postonwall.ServerModels;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Created by iosuser9 on 18.08.16.
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
+
 public class PicsArtPicturesObject {
     private List<PicsArtPictures> response = new ArrayList<>();
 
