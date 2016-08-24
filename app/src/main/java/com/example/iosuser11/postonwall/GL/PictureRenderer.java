@@ -5,6 +5,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
+import android.util.Log;
 
 import com.example.iosuser11.postonwall.GRVCoordinates;
 import com.example.iosuser11.postonwall.GL.objects.Table;
@@ -18,13 +19,14 @@ import javax.microedition.khronos.opengles.GL10;
 import static android.opengl.GLES20.GL_COLOR_BUFFER_BIT;
 import static android.opengl.GLES20.glClear;
 import static android.opengl.GLES20.glClearColor;
+import static android.opengl.GLES20.glGetError;
 import static android.opengl.GLES20.glViewport;
 import static android.opengl.Matrix.multiplyMM;
 import static android.opengl.Matrix.setIdentityM;
 import static android.opengl.Matrix.setLookAtM;
 import static android.opengl.Matrix.translateM;
 
-public class MyGyozalRenderer implements GLSurfaceView.Renderer
+public class PictureRenderer implements GLSurfaceView.Renderer
 {
     private final Context context;
 
@@ -54,13 +56,13 @@ public class MyGyozalRenderer implements GLSurfaceView.Renderer
 
     private float d = 10;
 
-    public MyGyozalRenderer(Activity activity)
+    public PictureRenderer(Activity activity)
     {
         this.context = activity.getApplicationContext();
         grvCoordinates = new GRVCoordinates(activity);
     }
 
-    public MyGyozalRenderer(Activity activity, Bitmap image)
+    public PictureRenderer(Activity activity, Bitmap image)
     {
 
         this.context = activity.getApplicationContext();
@@ -69,11 +71,13 @@ public class MyGyozalRenderer implements GLSurfaceView.Renderer
 
         this.image = image;
         useCustomImge = true;
+
     }
 
     @Override
     public void onSurfaceCreated(GL10 glUnused, EGLConfig config)
     {
+
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
         table = new Table();
@@ -148,6 +152,8 @@ public class MyGyozalRenderer implements GLSurfaceView.Renderer
 
             translateM(viewProjectionMatrix, 0, result[8],  result[9],  -(d)*result[10]);
 //            translateM(viewProjectionMatrix, 0, -(6) * result[8], -(6) * result[9],  -(6) * result[10]);
+
+
         } else {
             matCache = grvCoordinates.getRotationMatrix();
             multiplyMM(viewProjectionMatrix, 0, projectionMatrix, 0, viewMatrix, 0);
@@ -160,10 +166,14 @@ public class MyGyozalRenderer implements GLSurfaceView.Renderer
         textureProgram.setUniforms(modelViewProjectionMatrix, texture);
         table.bindData(textureProgram);
         table.draw();
+        int err =  glGetError();
+        if(err != 0) {
+            Log.d("", "onDrawFrame: " + err);
+        }
     }
 
-    public void startPttvel(){pttvel = true;}
-    public void stopPttvel(){pttvel = false;}
+    public void attachToWall(){pttvel = true;}
+    public void detachFromWall(){pttvel = false;}
 
     private void positionTableInScene()
     {

@@ -14,6 +14,7 @@ public class PictureObject {
     private MatOfKeyPoint keypoints;
     private Mat descriptors;
     private Bitmap picture;
+    private int scale;
 
     PictureObject(Bitmap p) {
         setPicture(p);
@@ -35,6 +36,10 @@ public class PictureObject {
         picture = p;
     }
 
+    void setScale(int s) {
+        scale = s;
+    }
+
     Location getLocation() {
         return location;
     }
@@ -49,5 +54,9 @@ public class PictureObject {
 
     Bitmap getPicture() {
         return picture;
+    }
+
+    int getScale() {
+        return scale;
     }
 }
