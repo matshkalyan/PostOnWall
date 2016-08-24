@@ -384,7 +384,7 @@ public class MainActivity extends Activity {
 //                } catch (InterruptedException e) {
 //                    e.printStackTrace();
 //                }
-//                pictureRenderer.attachToWall();
+                pictureRenderer.attachToWall();
             }
             imageFound = false;
         }
