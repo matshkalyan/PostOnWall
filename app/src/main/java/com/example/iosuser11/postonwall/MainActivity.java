@@ -379,11 +379,6 @@ public class MainActivity extends Activity {
                         }
                     });
                 }
-//                try {
-//                    Thread.sleep(100);
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
                 pictureRenderer.attachToWall();
             }
             imageFound = false;
