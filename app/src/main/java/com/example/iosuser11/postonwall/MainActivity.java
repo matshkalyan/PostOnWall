@@ -344,6 +344,11 @@ public class MainActivity extends Activity {
 
     void performImageMatch(){
         while(trackingState) {
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             byte[] data = cameraPreview.getCurrentFrame();
             pre = new Mat(cameraPreview.getmPreviewSize().height+cameraPreview.getmPreviewSize().height/2, cameraPreview.getmPreviewSize().width, CvType.CV_8UC1);
             pre.put(0, 0, data);
