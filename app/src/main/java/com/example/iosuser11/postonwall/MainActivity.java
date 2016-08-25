@@ -244,6 +244,7 @@ public class MainActivity extends Activity {
 
         if(permissionsToBeRequested.size() == 0) {
             cameraPreview = new CameraPreview(getApplicationContext());
+            pre = new Mat(cameraPreview.getmPreviewSize().height+cameraPreview.getmPreviewSize().height/2, cameraPreview.getmPreviewSize().width, CvType.CV_8UC1);
             wallView.addView(cameraPreview);
             gpsTracker = new GPSTracker(this);
         } else {
@@ -361,7 +362,7 @@ public class MainActivity extends Activity {
                 e.printStackTrace();
             }
             byte[] data = cameraPreview.getCurrentFrame();
-            pre = new Mat(cameraPreview.getmPreviewSize().height+cameraPreview.getmPreviewSize().height/2, cameraPreview.getmPreviewSize().width, CvType.CV_8UC1);
+//            pre = new Mat(cameraPreview.getmPreviewSize().height+cameraPreview.getmPreviewSize().height/2, cameraPreview.getmPreviewSize().width, CvType.CV_8UC1);
             pre.put(0, 0, data);
             Imgproc.cvtColor(pre,imgCurrent, Imgproc.COLOR_YUV2GRAY_NV21);
             Core.transpose(imgCurrent,imgCurrent);
@@ -391,14 +392,10 @@ public class MainActivity extends Activity {
                         @Override
                         public void run() {
                             newTrackedPictureView(nearbyPicturesList.get(currentPictureIndex).getPicture());
-                            pictureRenderer.updateDistance(20- nearbyPicturesList.get(currentPictureIndex).getScale());
+                            currentPicturesList.get(currentPicturesList.size() - 1).getRenderer().updateDistance(20- nearbyPicturesList.get(currentPictureIndex).getScale());
                         }
                     });
                 }
-//                while(!newPictureAdded){};
-//                pictureRenderer.attachToWall();
-                //attempt to get the view to start moving
-                Log.d("", "p: attachtowall()");
                 if(newPictureAdded)
                     currentPicturesList.get(currentPicturesList.size() - 1).getRenderer().attachToWall();
             }
