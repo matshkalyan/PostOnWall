@@ -159,7 +159,7 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View view) {
                 if(!photoChosen) {
-                    tracking.setChecked(false);
+//                    tracking.setChecked(false);
                     chooseImage();
                 } else {
                     postImage();    //save it as an object containing its GPS coordinates, keypoints, descriptors, add that object to the list of objects
@@ -178,7 +178,7 @@ public class MainActivity extends Activity {
         cancel.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                wallView.removeViewAt(1);
+                wallView.removeView(pictureView);
                 photoChosen = false;
                 post.setText("CHOOSE IMAGE");
                 cancel.setVisibility(View.GONE);
@@ -336,6 +336,7 @@ public class MainActivity extends Activity {
         Log.d("", "postImage: seekbar progress is: ");
 
         allPicturesList.add(newPicture);
+        findImagesNearby();
     }
 
     private void findImagesNearby() {
@@ -382,7 +383,7 @@ public class MainActivity extends Activity {
                         matches_final.add(matches.toList().get(j));
                     }
                 }
-                if (matches_final.size() > 100) {
+                if (matches_final.size() > 200) {
                     imageFound = true;
                     currentPictureIndex = i;
                 }

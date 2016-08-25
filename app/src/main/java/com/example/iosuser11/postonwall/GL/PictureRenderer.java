@@ -3,6 +3,7 @@ package com.example.iosuser11.postonwall.GL;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
 import android.util.Log;
@@ -55,6 +56,10 @@ public class PictureRenderer implements GLSurfaceView.Renderer
     private boolean pttvel = false;
 
     private float d = 10;
+
+    double anglex;
+    double angley;
+    double anglez;
 
     public PictureRenderer(Activity activity, Bitmap image)
     {
@@ -128,11 +133,20 @@ public class PictureRenderer implements GLSurfaceView.Renderer
         // Clear the rendering surface.
         glClear(GL_COLOR_BUFFER_BIT);
 
+        // enable face culling feature
+        GLES20.glEnable(GL10.GL_CULL_FACE);
+// specify which faces to not draw
+        GLES20.glCullFace(GL10.GL_BACK);
+
         if(pttvel) {
             mat = grvCoordinates.getRotationMatrix();
 
             Matrix.transposeM(matCacheTranspose, 0, matCache, 0);
             multiplyMM(result, 0, mat, 0, matCacheTranspose, 0);
+
+            anglex = Math.atan2((double)result[7], (double)result[8]);
+            angley = Math.atan2((double)-result[6], Math.sqrt(result[7] * result[7] + result[8] * result[8]));
+            anglez = Math.atan2((double)result[3], (double)result[0]);
 
             multiplyMM(tmp, 0, viewMatrix, 0, result, 0);
 
@@ -165,7 +179,7 @@ public class PictureRenderer implements GLSurfaceView.Renderer
     }
 
     public void attachToWall(){pttvel = true;}
-    public void detachFromWall(){pttvel = false;}
+//    public void detachFromWall(){pttvel = false;}
 
     private void positionTableInScene()
     {
@@ -178,5 +192,9 @@ public class PictureRenderer implements GLSurfaceView.Renderer
 
     public void updateDistance(int d) {
         this.d =(float) d;
+    }
+
+    double[] getAngleXYZ() {
+        return new double[]{anglex, angley, anglez};
     }
 }
