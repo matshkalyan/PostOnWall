@@ -56,22 +56,14 @@ public class PictureRenderer implements GLSurfaceView.Renderer
 
     private float d = 10;
 
-    public PictureRenderer(Activity activity)
-    {
-        this.context = activity.getApplicationContext();
-        grvCoordinates = new GRVCoordinates(activity);
-    }
-
     public PictureRenderer(Activity activity, Bitmap image)
     {
-
         this.context = activity.getApplicationContext();
 
         grvCoordinates = new GRVCoordinates(activity);
 
         this.image = image;
         useCustomImge = true;
-
     }
 
     @Override

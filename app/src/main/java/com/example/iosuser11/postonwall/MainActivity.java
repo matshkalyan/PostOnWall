@@ -56,9 +56,9 @@ import java.util.List;
 public class MainActivity extends Activity {
 
     public static ArrayList<PictureObject> allPicturesList;
-    public static ArrayList<PictureObject> nearbyPicturesList;
-    public static ArrayList<PictureObject> currentPicturesList;
-    public static ArrayList currentPicturesIndecesList;
+    public ArrayList<PictureObject> nearbyPicturesList;      //pictures posted nearby, is reinitialized ever time we enable tracking
+    public ArrayList<PicViewAndRend> currentPicturesList;     //pictures currently being tracked, is reinitialized ever time we enable tracking
+    public ArrayList currentPicturesIndexesList;     //indexes of the pictures currently being tracked in the list of the nearbyPicturesList, is reinitialized ever time we enable tracking
 
     //UI stuff
     private FrameLayout wallView;
@@ -92,6 +92,7 @@ public class MainActivity extends Activity {
     private boolean trackingState = false;
     private boolean photoChosen = false;
     private boolean imageFound = false;
+    private boolean newPictureAdded = false;
 
     //FOR SERVER
     private Communicator communicator;
@@ -128,9 +129,6 @@ public class MainActivity extends Activity {
 
         //initializing image lists
         allPicturesList = new ArrayList();      //should get the pictureobjects from the server
-//        nearbyPicturesList = new ArrayList<PictureObject>();     //is initialized every time we search for nearby images (every time we enable tracking)
-        currentPicturesList = new ArrayList<>();
-        currentPicturesIndecesList = new ArrayList();
 
         //UI stuff
         requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -165,6 +163,10 @@ public class MainActivity extends Activity {
                     chooseImage();
                 } else {
                     postImage();    //save it as an object containing its GPS coordinates, keypoints, descriptors, add that object to the list of objects
+
+                    wallView.removeView(pictureView);
+                    tracking.setChecked(true);
+
                     post.setText("CHOOSE IMAGE");
                     photoChosen = false;
                     seekBar.setVisibility(View.GONE);
@@ -188,10 +190,9 @@ public class MainActivity extends Activity {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                 if(isChecked) {     //we enabled tracking
-                    wallView.removeAllViews();
-                    cameraPreview.initCamera();
-                    wallView.addView(cameraPreview);
                     findImagesNearby();
+                    currentPicturesList = new ArrayList<PicViewAndRend>();
+                    currentPicturesIndexesList = new ArrayList();
                     messages.setVisibility(View.VISIBLE);
                     messages.setText("There are " + nearbyPicturesList.size() + " / " + allPicturesList.size() + " pictures posted nearby.");
                     trackingState = true;
@@ -204,9 +205,9 @@ public class MainActivity extends Activity {
                     }.execute();
                 } else {        //we disabled tracking
                     trackingState = false;
-                    wallView.removeAllViews();
-                    cameraPreview.initCamera();
-                    wallView.addView(cameraPreview);
+                    for(int i = 0; i<currentPicturesList.size(); i++) {
+                        wallView.removeView(currentPicturesList.get(i).getView());
+                    }
                     messages.setVisibility(View.GONE);
                     imageFound = false;
                 }
@@ -239,6 +240,7 @@ public class MainActivity extends Activity {
             permissionsToBeRequested.add(Manifest.permission.ACCESS_FINE_LOCATION);
         if(ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
             permissionsToBeRequested.add(Manifest.permission.READ_EXTERNAL_STORAGE);
+
 
         if(permissionsToBeRequested.size() == 0) {
             cameraPreview = new CameraPreview(getApplicationContext());
@@ -296,7 +298,15 @@ public class MainActivity extends Activity {
                     } catch (FileNotFoundException e) {
                         e.printStackTrace();
                     }
-                    createImageView(selectedPicture);       //we updated the pictureView and pictureRenderer to point to the newly added view and its renderer
+                    pictureView = new PictureView(getApplicationContext(), cameraPreview.getmPreviewSize().width, cameraPreview.getmPreviewSize().height);
+                    pictureView.setEGLContextClientVersion(2);
+                    pictureView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
+                    pictureView.setEGLConfigChooser(8,8,8,8,0,0);
+                    pictureView.setZOrderOnTop(true);
+                    pictureRenderer = new PictureRenderer(this, selectedPicture);
+                    pictureView.setRenderer(pictureRenderer);
+                    wallView.addView(pictureView);
+                    pictureView.bringToFront();
                 }
         }
     }
@@ -346,7 +356,7 @@ public class MainActivity extends Activity {
     void performImageMatch(){
         while(trackingState) {
             try {
-                Thread.sleep(10);
+                Thread.sleep(1);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -376,39 +386,50 @@ public class MainActivity extends Activity {
                     currentPictureIndex = i;
                 }
                 if(imageFound && !pictureIsViewed(currentPictureIndex)) {
-                    currentPicturesIndecesList.add(currentPictureIndex);
+                    currentPicturesIndexesList.add(currentPictureIndex);
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            createImageView(nearbyPicturesList.get(currentPictureIndex).getPicture());
+                            newTrackedPictureView(nearbyPicturesList.get(currentPictureIndex).getPicture());
                             pictureRenderer.updateDistance(20- nearbyPicturesList.get(currentPictureIndex).getScale());
                         }
                     });
                 }
-                pictureRenderer.attachToWall();
+//                while(!newPictureAdded){};
+//                pictureRenderer.attachToWall();
+                //attempt to get the view to start moving
+                Log.d("", "p: attachtowall()");
+                if(newPictureAdded)
+                    currentPicturesList.get(currentPicturesList.size() - 1).getRenderer().attachToWall();
             }
             imageFound = false;
+            newPictureAdded = false;
         }
     }
 
     boolean pictureIsViewed(int index) {
-        for(int i = 0; i < currentPicturesIndecesList.size(); i++) {
-            if(currentPicturesIndecesList.get(i) == index)
+        for(int i = 0; i < currentPicturesIndexesList.size(); i++) {
+            if(currentPicturesIndexesList.get(i) == index)
                 return true;
         }
         return false;
     }
 
-    void createImageView(Bitmap image) {
-        pictureView = new PictureView(getApplicationContext(), cameraPreview.getmPreviewSize().width, cameraPreview.getmPreviewSize().height);
-        pictureView.setEGLContextClientVersion(2);
-        pictureView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
-        pictureView.setEGLConfigChooser(8,8,8,8,0,0);
-        pictureView.setZOrderOnTop(true);
-        pictureRenderer = new PictureRenderer(this, image);
-        pictureView.setRenderer(pictureRenderer);
-        wallView.addView(pictureView);
-        pictureView.bringToFront();
+    void newTrackedPictureView(Bitmap image) {
+        PictureView pView = new PictureView(getApplicationContext(), cameraPreview.getmPreviewSize().width, cameraPreview.getmPreviewSize().height);
+        pView.setEGLContextClientVersion(2);
+        pView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
+        pView.setEGLConfigChooser(8,8,8,8,0,0);
+        pView.setZOrderOnTop(true);
+        PictureRenderer pRenderer = new PictureRenderer(this, image);
+        pView.setRenderer(pRenderer);
+        pView.bringToFront();
+        wallView.addView(pView);
+
+        PicViewAndRend picViewAndRend = new PicViewAndRend(pView, pRenderer);
+        currentPicturesList.add(picViewAndRend);
+        Log.d("", "p: view added");
+        newPictureAdded = true;
     }
 
     @Override
