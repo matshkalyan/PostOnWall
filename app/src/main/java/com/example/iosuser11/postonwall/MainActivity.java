@@ -417,10 +417,11 @@ public class MainActivity extends Activity {
         pView.setEGLContextClientVersion(2);
         pView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
         pView.setEGLConfigChooser(8,8,8,8,0,0);
-        pView.setZOrderOnTop(true);
+//        pView.setZOrderOnTop(true);
+        pView.setZOrderMediaOverlay(true);
         PictureRenderer pRenderer = new PictureRenderer(this, image);
         pView.setRenderer(pRenderer);
-        pView.bringToFront();
+//        pView.bringToFront();
         wallView.addView(pView);
 
         PicViewAndRend picViewAndRend = new PicViewAndRend(pView, pRenderer);
