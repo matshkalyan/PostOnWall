@@ -9,7 +9,6 @@ import android.content.pm.ConfigurationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.location.Location;
 import android.net.Uri;
@@ -33,8 +32,6 @@ import android.widget.Toast;
 import com.example.iosuser11.postonwall.GL.PictureRenderer;
 import com.example.iosuser11.postonwall.Network.Communicator;
 import com.example.iosuser11.postonwall.Network.CommunicatorPicsArt;
-import com.example.iosuser11.postonwall.ServerModels.PicsArtPictures;
-import com.example.iosuser11.postonwall.ServerModels.Picture;
 
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Core;
@@ -59,6 +56,7 @@ import java.util.List;
 public class MainActivity extends Activity {
 
     public static ArrayList<PictureObject> allPicturesList;
+    public static ArrayList<PictureObject> nearbyPicturesList;
     public static ArrayList<PictureObject> currentPicturesList;
     public static ArrayList currentPicturesIndecesList;
 
@@ -98,7 +96,6 @@ public class MainActivity extends Activity {
     //FOR SERVER
     private Communicator communicator;
     private CommunicatorPicsArt communicatorPicsArt;
-    private Picture picture;
 
     private Bitmap selectedPicture;
     private int currentPictureIndex;
@@ -130,9 +127,10 @@ public class MainActivity extends Activity {
         communicatorPicsArt = new CommunicatorPicsArt();
 
         //initializing image lists
-        allPicturesList = new ArrayList();
+        allPicturesList = new ArrayList();      //should get the pictureobjects from the server
+//        nearbyPicturesList = new ArrayList<PictureObject>();     //is initialized every time we search for nearby images (every time we enable tracking)
+        currentPicturesList = new ArrayList<>();
         currentPicturesIndecesList = new ArrayList();
-//        currentPicturesList = new ArrayList<PictureObject>();     //is initialized every time we search for nearby images (every time we enable tracking)
 
         //UI stuff
         requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -195,7 +193,7 @@ public class MainActivity extends Activity {
                     wallView.addView(cameraPreview);
                     findImagesNearby();
                     messages.setVisibility(View.VISIBLE);
-                    messages.setText("There are " + currentPicturesList.size() + " / " + allPicturesList.size() + " pictures posted nearby.");
+                    messages.setText("There are " + nearbyPicturesList.size() + " / " + allPicturesList.size() + " pictures posted nearby.");
                     trackingState = true;
                     new AsyncTask<Void, Void, Void>() {
                         @Override
@@ -231,9 +229,6 @@ public class MainActivity extends Activity {
 
             }
         });
-
-     //   communicatorPicsArt.picsArtPictureGet();
-
     }
 
     private void requestPermissions() {
@@ -330,17 +325,10 @@ public class MainActivity extends Activity {
         Log.d("", "postImage: seekbar progress is: ");
 
         allPicturesList.add(newPicture);
-
-        //Post image to Server
-      //  communicator.picturePost(picture);
     }
 
     private void findImagesNearby() {
-
-      //  communicator.pictureGet(picture.getCoordinates(), picture.getDistance());
-
-
-        currentPicturesList = new ArrayList<>();
+        nearbyPicturesList = new ArrayList<>();
         Location originalLocation;
         currentLocation = gpsTracker.getLocation();
         for(int i = 0; i < allPicturesList.size(); i++) {
@@ -349,7 +337,7 @@ public class MainActivity extends Activity {
                     (currentLocation.getLatitude() - (currentLocation.getAccuracy()/111111.0) < originalLocation.getLatitude())){
                 if((currentLocation.getLongitude() + (currentLocation.getAccuracy()/111111.0) > originalLocation.getLongitude())&&
                         (currentLocation.getLongitude() - (currentLocation.getAccuracy()/111111.0) < originalLocation.getLongitude())) {
-                    currentPicturesList.add(allPicturesList.get(i));
+                    nearbyPicturesList.add(allPicturesList.get(i));
                 }
             }
         }
@@ -372,9 +360,9 @@ public class MainActivity extends Activity {
             descriptor.compute(imgCurrent, keypointsCurrent, descriptorsCurrent);
 
             Mat descriptorsOriginal;
-            for(int i = 0; i < currentPicturesList.size() && !imageFound; i++) {
+            for(int i = 0; i < nearbyPicturesList.size() && !imageFound; i++) {
                 //take descriptors of the wall of picture[i], match it with the wall being currently displayed
-                descriptorsOriginal = currentPicturesList.get(i).getDescriptors();
+                descriptorsOriginal = nearbyPicturesList.get(i).getDescriptors();
                 matcher.match(descriptorsCurrent, descriptorsOriginal, matches);
                 List<DMatch> matchesList = matches.toList();
                 List<DMatch> matches_final= new ArrayList<>();
@@ -392,8 +380,8 @@ public class MainActivity extends Activity {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            createImageView(currentPicturesList.get(currentPictureIndex).getPicture());
-                            pictureRenderer.updateDistance(20-currentPicturesList.get(currentPictureIndex).getScale());
+                            createImageView(nearbyPicturesList.get(currentPictureIndex).getPicture());
+                            pictureRenderer.updateDistance(20- nearbyPicturesList.get(currentPictureIndex).getScale());
                         }
                     });
                 }
