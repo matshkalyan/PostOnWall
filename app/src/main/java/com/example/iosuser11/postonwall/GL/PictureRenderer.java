@@ -74,11 +74,8 @@ public class PictureRenderer implements GLSurfaceView.Renderer
     @Override
     public void onSurfaceCreated(GL10 glUnused, EGLConfig config)
     {
-
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-
         table = new Table();
-
         textureProgram = new TextureShaderProgram(context);
         texture = TextureHelper.loadTexture(context, image);
     }
@@ -133,33 +130,21 @@ public class PictureRenderer implements GLSurfaceView.Renderer
         // Clear the rendering surface.
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // enable face culling feature
-        GLES20.glEnable(GL10.GL_CULL_FACE);
-// specify which faces to not draw
-        GLES20.glCullFace(GL10.GL_BACK);
+        GLES20.glEnable(GL10.GL_CULL_FACE);     // enable face culling feature
+        GLES20.glCullFace(GL10.GL_BACK);        // specify which faces to not draw
 
         if(pttvel) {
             mat = grvCoordinates.getRotationMatrix();
 
             Matrix.transposeM(matCacheTranspose, 0, matCache, 0);
             multiplyMM(result, 0, mat, 0, matCacheTranspose, 0);
+            multiplyMM(tmp, 0, viewMatrix, 0, result, 0);
+            multiplyMM(viewProjectionMatrix, 0, projectionMatrix, 0, tmp, 0);
+            translateM(viewProjectionMatrix, 0, result[8],  result[9],  -(d)*result[10]);
 
             anglex = Math.atan2((double)result[7], (double)result[8]);
             angley = Math.atan2((double)-result[6], Math.sqrt(result[7] * result[7] + result[8] * result[8]));
             anglez = Math.atan2((double)result[3], (double)result[0]);
-
-            multiplyMM(tmp, 0, viewMatrix, 0, result, 0);
-
-//            tmp[3]  = tmp[3]  + 1 * result[8];
-//            tmp[7]  = tmp[7]  + 1 * result[9];
-//            tmp[11] = tmp[11] + 1 * result[10];
-
-            multiplyMM(viewProjectionMatrix, 0, projectionMatrix, 0, tmp, 0);
-
-            translateM(viewProjectionMatrix, 0, result[8],  result[9],  -(d)*result[10]);
-//            translateM(viewProjectionMatrix, 0, -(6) * result[8], -(6) * result[9],  -(6) * result[10]);
-
-
         } else {
             matCache = grvCoordinates.getRotationMatrix();
             multiplyMM(viewProjectionMatrix, 0, projectionMatrix, 0, viewMatrix, 0);
