@@ -263,6 +263,7 @@ public class MainActivity extends Activity {
                     finish();
                 } else {
                     cameraPreview = new CameraPreview(getApplicationContext());
+                    pre = new Mat(cameraPreview.getmPreviewSize().height+cameraPreview.getmPreviewSize().height/2, cameraPreview.getmPreviewSize().width, CvType.CV_8UC1);
                     wallView.addView(cameraPreview);
                     gpsTracker = new GPSTracker(this);
                 }
