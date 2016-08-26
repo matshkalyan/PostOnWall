@@ -1,6 +1,4 @@
-package com.example.iosuser11.postonwall.GL.data;
-
-import com.example.iosuser11.postonwall.GL.Constants;
+package com.example.iosuser11.postonwall.GL;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -13,11 +11,12 @@ import static android.opengl.GLES20.glVertexAttribPointer;
 public class VertexArray
 {
     private final FloatBuffer floatBuffer;
+    public static final int BYTES_PER_FLOAT = 4;
 
     public VertexArray(float[] vertexData)
     {
         floatBuffer = ByteBuffer
-                .allocateDirect(vertexData.length * Constants.BYTES_PER_FLOAT)
+                .allocateDirect(vertexData.length * BYTES_PER_FLOAT)
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer()
                 .put(vertexData);

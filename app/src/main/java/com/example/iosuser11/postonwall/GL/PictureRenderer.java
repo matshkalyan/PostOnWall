@@ -9,8 +9,6 @@ import android.opengl.Matrix;
 import android.util.Log;
 
 import com.example.iosuser11.postonwall.GRVCoordinates;
-import com.example.iosuser11.postonwall.GL.objects.Table;
-import com.example.iosuser11.postonwall.GL.programs.TextureShaderProgram;
 import com.example.iosuser11.postonwall.GL.util.MatrixHelper;
 import com.example.iosuser11.postonwall.GL.util.TextureHelper;
 

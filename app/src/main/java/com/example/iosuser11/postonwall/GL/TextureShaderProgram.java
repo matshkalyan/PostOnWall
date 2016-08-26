@@ -1,4 +1,4 @@
-package com.example.iosuser11.postonwall.GL.programs;
+package com.example.iosuser11.postonwall.GL;
 
 import android.content.Context;
 
@@ -24,8 +24,7 @@ public class TextureShaderProgram extends ShaderProgram
     private final int aPositionLocation;
     private final int aTextureCoordinatesLocation;
 
-    public TextureShaderProgram(Context context)
-    {
+    public TextureShaderProgram(Context context) {
         super(context, R.raw.texture_vertex_shader,
                 R.raw.texture_fragment_shader);
 
@@ -39,8 +38,7 @@ public class TextureShaderProgram extends ShaderProgram
         aTextureCoordinatesLocation = glGetAttribLocation(program, A_TEXTURE_COORDINATES);
     }
 
-    public void setUniforms(float[] matrix, int textureId)
-    {
+    public void setUniforms(float[] matrix, int textureId) {
         // Pass the matrix into the shader program.
         glUniformMatrix4fv(uMatrixLocation, 1, false, matrix, 0);
 

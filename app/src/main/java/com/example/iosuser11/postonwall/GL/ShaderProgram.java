@@ -1,4 +1,4 @@
-package com.example.iosuser11.postonwall.GL.programs;
+package com.example.iosuser11.postonwall.GL;
 
 import android.content.Context;
 
@@ -21,19 +21,14 @@ abstract class ShaderProgram
     // Shader program
     protected final int program;
 
-    protected ShaderProgram(Context context, int vertexShaderResourceId,
-                            int fragmentShaderResourceId)
-    {
+    protected ShaderProgram(Context context, int vertexShaderResourceId, int fragmentShaderResourceId) {
         // Compile the shaders and link the program.
         program = ShaderHelper.buildProgram(
-                TextResourceReader
-                        .readTextFileFromResource(context, vertexShaderResourceId),
-                TextResourceReader
-                        .readTextFileFromResource(context, fragmentShaderResourceId));
+                TextResourceReader.readTextFileFromResource(context, vertexShaderResourceId),
+                TextResourceReader.readTextFileFromResource(context, fragmentShaderResourceId));
     }
 
-    public void useProgram()
-    {
+    public void useProgram() {
         // Set the current OpenGL shader program to this program.
         glUseProgram(program);
     }

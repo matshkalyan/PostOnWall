@@ -422,10 +422,10 @@ public class MainActivity extends Activity {
         PictureRenderer pRenderer = new PictureRenderer(this, image);
         pView.setRenderer(pRenderer);
         wallView.addView(pView);
+        pView.bringToFront();
 
         PicViewAndRend picViewAndRend = new PicViewAndRend(pView, pRenderer);
         currentPicturesList.add(picViewAndRend);
-        Log.d("", "p: view added");
         newPictureAdded = true;
     }
 
