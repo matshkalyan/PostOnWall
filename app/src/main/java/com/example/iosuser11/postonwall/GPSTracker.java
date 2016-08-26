@@ -20,7 +20,7 @@ import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
-
+//intial comit
 public class GPSTracker extends Service implements LocationListener {
 
     private final Activity mActivity;
