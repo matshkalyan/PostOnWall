@@ -55,7 +55,7 @@ import java.util.List;
  */
 public class MainActivity extends Activity {
 
-    public static ArrayList<PictureObject> allPicturesList;
+    public static ArrayList<PictureObject> allPicturesList;     //all of the pictures posted via this app, must be in the server in future
     public ArrayList<PictureObject> nearbyPicturesList;      //pictures posted nearby, is reinitialized ever time we enable tracking
     public ArrayList<PicViewAndRend> currentPicturesList;     //pictures currently being tracked, is reinitialized ever time we enable tracking
     public ArrayList currentPicturesIndexesList;     //indexes of the pictures currently being tracked in the list of the nearbyPicturesList, is reinitialized ever time we enable tracking
@@ -75,10 +75,12 @@ public class MainActivity extends Activity {
     Mat imgCurrent;
     Mat pre;
     FeatureDetector detector;
-    MatOfKeyPoint keypointsCurrent;
     DescriptorExtractor descriptor;
-    Mat descriptorsCurrent;
     DescriptorMatcher matcher;
+    MatOfKeyPoint keypointsPrevious;
+    MatOfKeyPoint keypointsCurrent;
+    Mat descriptorsPrevious;
+    Mat descriptorsCurrent;
     MatOfDMatch matches;
 
     //Sensors
@@ -199,7 +201,7 @@ public class MainActivity extends Activity {
                     new AsyncTask<Void, Void, Void>() {
                         @Override
                         protected Void doInBackground(Void... voids) {
-                            performImageMatch();
+                            findPictureOnCurrentWall();
                             return null;
                         }
                     }.execute();
@@ -320,11 +322,7 @@ public class MainActivity extends Activity {
         MatOfKeyPoint keypointsCurrent = new MatOfKeyPoint();
         Mat descriptorsCurrent = new Mat();
 
-        byte[] data = cameraPreview.getCurrentFrame();
-        pre.put(0, 0, data);
-        Imgproc.cvtColor(pre,imgCurrent, Imgproc.COLOR_YUV2GRAY_NV21);
-        Core.transpose(imgCurrent,imgCurrent);
-        Core.flip(imgCurrent,imgCurrent,1);
+        getCurrentCameraFrame(imgCurrent);
         detector.detect(imgCurrent,keypointsCurrent);
         descriptor.compute(imgCurrent, keypointsCurrent, descriptorsCurrent);
 
@@ -355,20 +353,26 @@ public class MainActivity extends Activity {
         }
     }
 
-    void performImageMatch(){
+    void getCurrentCameraFrame(Mat imgCurrent) {
+        byte[] data = cameraPreview.getCurrentFrame();
+        pre.put(0, 0, data);
+        Imgproc.cvtColor(pre, imgCurrent, Imgproc.COLOR_YUV2GRAY_NV21);
+        Core.transpose(imgCurrent, imgCurrent);
+        Core.flip(imgCurrent, imgCurrent, 1);
+    }
+
+    void findPictureOnCurrentWall(){
+        //every cycle of this while loop tries to find a picture posted on the wall being viewed at the time of this cycle
         while(trackingState) {
             try {
                 Thread.sleep(1);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            byte[] data = cameraPreview.getCurrentFrame();
-//            pre = new Mat(cameraPreview.getmPreviewSize().height+cameraPreview.getmPreviewSize().height/2, cameraPreview.getmPreviewSize().width, CvType.CV_8UC1);
-            pre.put(0, 0, data);
-            Imgproc.cvtColor(pre,imgCurrent, Imgproc.COLOR_YUV2GRAY_NV21);
-            Core.transpose(imgCurrent,imgCurrent);
-            Core.flip(imgCurrent,imgCurrent,1);
-            detector.detect(imgCurrent,keypointsCurrent);
+            getCurrentCameraFrame(imgCurrent);
+            keypointsPrevious = keypointsCurrent;
+            descriptorsPrevious = descriptorsCurrent;
+            detector.detect(imgCurrent, keypointsCurrent);
             descriptor.compute(imgCurrent, keypointsCurrent, descriptorsCurrent);
 
             Mat descriptorsOriginal;
