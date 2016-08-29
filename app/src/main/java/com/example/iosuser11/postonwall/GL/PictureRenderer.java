@@ -45,6 +45,9 @@ public class PictureRenderer implements GLSurfaceView.Renderer
     private boolean useCustomImge = false;
     private Bitmap image;
 
+    private float imageHeight;
+    private float imageWidth;
+
     private Table table;
     private GRVCoordinates grvCoordinates;
 
@@ -59,6 +62,9 @@ public class PictureRenderer implements GLSurfaceView.Renderer
     double angley;
     double anglez;
 
+    double translateX;
+    double translateY;
+
     public PictureRenderer(Activity activity, Bitmap image)
     {
         this.context = activity.getApplicationContext();
@@ -67,13 +73,16 @@ public class PictureRenderer implements GLSurfaceView.Renderer
 
         this.image = image;
         useCustomImge = true;
+
+        imageHeight = (float) image.getHeight();
+        imageWidth = (float) image.getWidth();
     }
 
     @Override
     public void onSurfaceCreated(GL10 glUnused, EGLConfig config)
     {
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-        table = new Table();
+        table = new Table(imageHeight, imageWidth);
         textureProgram = new TextureShaderProgram(context);
         texture = TextureHelper.loadTexture(context, image);
     }
@@ -136,14 +145,19 @@ public class PictureRenderer implements GLSurfaceView.Renderer
 
             Matrix.transposeM(matCacheTranspose, 0, matCache, 0);
             multiplyMM(result, 0, mat, 0, matCacheTranspose, 0);
+
             multiplyMM(tmp, 0, viewMatrix, 0, result, 0);
             multiplyMM(viewProjectionMatrix, 0, projectionMatrix, 0, tmp, 0);
+
             translateM(viewProjectionMatrix, 0, result[8],  result[9],  -(d)*result[10]);
+            translateM(viewProjectionMatrix, 0, (float)translateX, (float)translateY, 0);
 
             anglex = Math.atan2((double)result[7], (double)result[8]);
             angley = Math.atan2((double)-result[6], Math.sqrt(result[7] * result[7] + result[8] * result[8]));
             anglez = Math.atan2((double)result[3], (double)result[0]);
-        } else {
+        }
+        else
+        {
             matCache = grvCoordinates.getRotationMatrix();
             multiplyMM(viewProjectionMatrix, 0, projectionMatrix, 0, viewMatrix, 0);
             translateM(viewProjectionMatrix, 0, 0 , 0 ,   -(d) );
@@ -179,5 +193,10 @@ public class PictureRenderer implements GLSurfaceView.Renderer
 
     double[] getAngleXYZ() {
         return new double[]{anglex, angley, anglez};
+    }
+
+    public void setTranslation(double x, double y) {
+        translateX = x;
+        translateY = y;
     }
 }

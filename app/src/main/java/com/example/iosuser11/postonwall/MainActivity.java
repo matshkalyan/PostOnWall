@@ -9,6 +9,7 @@ import android.content.pm.ConfigurationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.graphics.PixelFormat;
 import android.location.Location;
 import android.net.Uri;
@@ -34,12 +35,15 @@ import com.example.iosuser11.postonwall.Network.Communicator;
 import com.example.iosuser11.postonwall.Network.CommunicatorPicsArt;
 
 import org.opencv.android.OpenCVLoader;
+import org.opencv.calib3d.Calib3d;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.DMatch;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfDMatch;
 import org.opencv.core.MatOfKeyPoint;
+import org.opencv.core.MatOfPoint2f;
+import org.opencv.core.Point;
 import org.opencv.features2d.DescriptorExtractor;
 import org.opencv.features2d.DescriptorMatcher;
 import org.opencv.features2d.FeatureDetector;
@@ -77,11 +81,14 @@ public class MainActivity extends Activity {
     FeatureDetector detector;
     DescriptorExtractor descriptor;
     DescriptorMatcher matcher;
+    MatOfKeyPoint keyPointsOriginal;
     MatOfKeyPoint keypointsPrevious;
     MatOfKeyPoint keypointsCurrent;
+    Mat descriptorsOriginal;
     Mat descriptorsPrevious;
     Mat descriptorsCurrent;
     MatOfDMatch matches;
+    MatOfDMatch successiveMatches;
 
     //Sensors
     private GPSTracker gpsTracker;
@@ -201,7 +208,7 @@ public class MainActivity extends Activity {
                     new AsyncTask<Void, Void, Void>() {
                         @Override
                         protected Void doInBackground(Void... voids) {
-                            findPictureOnCurrentWall();
+                            tracking();
                             return null;
                         }
                     }.execute();
@@ -361,21 +368,73 @@ public class MainActivity extends Activity {
         Core.flip(imgCurrent, imgCurrent, 1);
     }
 
+    void tracking() {
+        while(trackingState) {
+            trackCurrentPictures();
+            findPictureOnCurrentWall();
+        }
+    }
+
+    void trackCurrentPictures() {
+        //
+        getCurrentCameraFrame(imgCurrent);
+
+        if(keypointsCurrent == null || descriptorsCurrent == null) {
+            detector.detect(imgCurrent, keypointsPrevious);
+            descriptor.compute(imgCurrent, keypointsPrevious, descriptorsPrevious);
+        } else {
+            keypointsPrevious = keypointsCurrent;
+            descriptorsPrevious = descriptorsCurrent;
+        }
+        detector.detect(imgCurrent, keypointsCurrent);
+        descriptor.compute(imgCurrent, keypointsCurrent, descriptorsCurrent);
+
+        //match current frame with the previous frame to compute homography and update all of the picures in the currentPicturesList
+        if(currentPicturesList.size() > 0) {
+            successiveMatches = new MatOfDMatch();
+            matcher.match(descriptorsCurrent, descriptorsPrevious, successiveMatches);
+            List<DMatch> matchesList2 = successiveMatches.toList();
+            List<DMatch> matches_final2 = new ArrayList<>();
+            for(int j = 0; j < matchesList2.size(); j++) {
+                if (matchesList2.get(j).distance <= 40) {
+                    matches_final2.add(successiveMatches.toList().get(j));
+                }
+            }
+            List<Point> objpoints = new ArrayList<Point>();
+            List<Point> scenepoints = new ArrayList<Point>();
+            for(int i=0; i < matches_final2.size(); i++) {
+                objpoints.add(keypointsPrevious.toList().get((matches_final2.get(i)).queryIdx).pt);
+                scenepoints.add(keypointsCurrent.toList().get((matches_final2.get(i)).trainIdx).pt);
+            }
+            MatOfPoint2f obj = new MatOfPoint2f();
+            obj.fromList(objpoints);
+            MatOfPoint2f scene = new MatOfPoint2f();
+            scene.fromList(scenepoints);
+            Mat homography = Calib3d.findHomography(obj, scene, Calib3d.RANSAC, 0.1);
+            Log.d("", "translation is: " + homography.get(0, 2)[0] + homography.get(1, 2)[0]);
+            for(int i = 0; i<currentPicturesList.size(); i++) {
+                currentPicturesList.get(i).getRenderer().setTranslation(homography.get(0, 2)[0], homography.get(1, 2)[0]);
+
+//                currentPicturesList.get(i).getView().setTranslationX(1 * (float) homography.get(0, 2)[0]);
+//                currentPicturesList.get(i).getView().setTranslationY(1 * (float) homography.get(1, 2)[0]);
+            }
+        }
+    }
+
     void findPictureOnCurrentWall(){
         //every cycle of this while loop tries to find a picture posted on the wall being viewed at the time of this cycle
-        while(trackingState) {
+//        while(trackingState) {
             try {
                 Thread.sleep(1);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            getCurrentCameraFrame(imgCurrent);
-            keypointsPrevious = keypointsCurrent;
-            descriptorsPrevious = descriptorsCurrent;
-            detector.detect(imgCurrent, keypointsCurrent);
-            descriptor.compute(imgCurrent, keypointsCurrent, descriptorsCurrent);
+//            getCurrentCameraFrame(imgCurrent);
+//            detector.detect(imgCurrent, keypointsCurrent);
+//            descriptor.compute(imgCurrent, keypointsCurrent, descriptorsCurrent);
+            //current descriptors are already computed in the trackCurrentPictures()
 
-            Mat descriptorsOriginal;
+            //match current frame with the frames of the nearby pictures,,, here only original keypoints/descriptors are computed
             for(int i = 0; i < nearbyPicturesList.size() && !imageFound; i++) {
                 //take descriptors of the wall of picture[i], match it with the wall being currently displayed
                 descriptorsOriginal = nearbyPicturesList.get(i).getDescriptors();
@@ -406,7 +465,7 @@ public class MainActivity extends Activity {
             }
             imageFound = false;
             newPictureAdded = false;
-        }
+//        }
     }
 
     boolean pictureIsViewed(int index) {

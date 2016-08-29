@@ -10,19 +10,21 @@ public class Table {
     private static final int BYTES_PER_FLOAT = 4;
     private static final int STRIDE = (POSITION_COMPONENT_COUNT + TEXTURE_COORDINATES_COMPONENT_COUNT) * BYTES_PER_FLOAT;
 
-    private static final float[] VERTEX_DATA = {
-            // Order of coordinates: X, Y, S, T
-            0f, 0f, 0.5f, 0.5f,
-            -0.5f, -0.8f, 0f, 0.9f,
-            0.5f, -0.8f, 1f, 0.9f,
-            0.5f, 0.8f, 1f, 0.1f,
-            -0.5f, 0.8f, 0f, 0.1f,
-            -0.5f, -0.8f, 0f, 0.9f };
-
     private final VertexArray vertexArray;
 
-    public Table()
+    public Table(float height, float width)
     {
+        final float[] VERTEX_DATA = {
+                // Order of coordinates:
+                // X,            Y,                       S,     T
+                0f,              0f,                      0.5f,  0.5f,
+                -width / 900f,   -height / 900f,           0f,    1f,
+                width / 900f,   -height / 900f,           1f,    1f,
+                width / 900f,    height / 900f,           1f,    0f,
+                -width / 900f,    height / 900f,           0f,    0f,
+                -width / 900f,   -height / 900f,           0f,    1f
+        };
+
         vertexArray = new VertexArray(VERTEX_DATA);
     }
 
