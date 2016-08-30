@@ -62,8 +62,8 @@ public class PictureRenderer implements GLSurfaceView.Renderer
     double angley;
     double anglez;
 
-    double translateX;
-    double translateY;
+//    double translateX;
+//    double translateY;
 
     public PictureRenderer(Activity activity, Bitmap image)
     {
@@ -150,7 +150,7 @@ public class PictureRenderer implements GLSurfaceView.Renderer
             multiplyMM(viewProjectionMatrix, 0, projectionMatrix, 0, tmp, 0);
 
             translateM(viewProjectionMatrix, 0, result[8],  result[9],  -(d)*result[10]);
-            translateM(viewProjectionMatrix, 0, (float)translateX, (float)translateY, 0);
+//            translateM(viewProjectionMatrix, 0, (float)translateX, (float)translateY, 0);
 
             anglex = Math.atan2((double)result[7], (double)result[8]);
             angley = Math.atan2((double)-result[6], Math.sqrt(result[7] * result[7] + result[8] * result[8]));
@@ -195,8 +195,8 @@ public class PictureRenderer implements GLSurfaceView.Renderer
         return new double[]{anglex, angley, anglez};
     }
 
-    public void setTranslation(double x, double y) {
-        translateX = x;
-        translateY = y;
-    }
+//    public void setTranslation(double x, double y) {
+//        translateX = x;
+//        translateY = y;
+//    }
 }
