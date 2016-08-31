@@ -8,7 +8,7 @@ import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
 import android.util.Log;
 
-import com.example.iosuser11.postonwall.GRVCoordinates;
+import com.example.iosuser11.postonwall.MotionSensors;
 import com.example.iosuser11.postonwall.GL.util.MatrixHelper;
 import com.example.iosuser11.postonwall.GL.util.TextureHelper;
 
@@ -49,7 +49,7 @@ public class PictureRenderer implements GLSurfaceView.Renderer
     private float imageWidth;
 
     private Table table;
-    private GRVCoordinates grvCoordinates;
+    private MotionSensors motionSensors;
 
     private TextureShaderProgram textureProgram;
 
@@ -69,7 +69,7 @@ public class PictureRenderer implements GLSurfaceView.Renderer
     {
         this.context = activity.getApplicationContext();
 
-        grvCoordinates = new GRVCoordinates(activity);
+        motionSensors = new MotionSensors(activity);
 
         this.image = image;
         useCustomImge = true;
@@ -141,7 +141,7 @@ public class PictureRenderer implements GLSurfaceView.Renderer
         GLES20.glCullFace(GL10.GL_BACK);        // specify which faces to not draw
 
         if(pttvel) {
-            mat = grvCoordinates.getRotationMatrix();
+            mat = motionSensors.getRotationMatrix();
 
             Matrix.transposeM(matCacheTranspose, 0, matCache, 0);
             multiplyMM(result, 0, mat, 0, matCacheTranspose, 0);
@@ -158,7 +158,7 @@ public class PictureRenderer implements GLSurfaceView.Renderer
         }
         else
         {
-            matCache = grvCoordinates.getRotationMatrix();
+            matCache = motionSensors.getRotationMatrix();
             multiplyMM(viewProjectionMatrix, 0, projectionMatrix, 0, viewMatrix, 0);
             translateM(viewProjectionMatrix, 0, 0 , 0 ,   -(d) );
         }
