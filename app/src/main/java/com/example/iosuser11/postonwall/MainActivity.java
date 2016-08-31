@@ -50,9 +50,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by iosuser11 on 8/10/16.
- */
 public class MainActivity extends Activity {
 
     public static ArrayList<PictureObject> allPicturesList;     //all of the pictures posted via this app, must be in the server in future
@@ -85,12 +82,10 @@ public class MainActivity extends Activity {
 
     //Sensors
     private GPSTracker gpsTracker;
-    private Location currentLocation = null;
 
     //flags
     private boolean afterOnPause = false;
     private boolean cameraPermissionGranted = false;
-    private boolean gpsPermissionGranted = false;
     private boolean trackingState = false;
     private boolean photoChosen = false;
     private boolean imageFound = false;
@@ -193,7 +188,7 @@ public class MainActivity extends Activity {
             public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                 if(isChecked) {     //we enabled tracking
                     findImagesNearby();
-                    currentPicturesList = new ArrayList<PicViewAndRend>();
+                    currentPicturesList = new ArrayList<>();
                     currentPicturesIndexesList = new ArrayList();
                     messages.setVisibility(View.VISIBLE);
                     messages.setText("There are " + nearbyPicturesList.size() + " / " + allPicturesList.size() + " pictures posted nearby.");
@@ -340,7 +335,7 @@ public class MainActivity extends Activity {
     private void findImagesNearby() {
         nearbyPicturesList = new ArrayList<>();
         Location originalLocation;
-        currentLocation = gpsTracker.getLocation();
+        Location currentLocation = gpsTracker.getLocation();
         for(int i = 0; i < allPicturesList.size(); i++) {
             originalLocation = allPicturesList.get(i).getLocation();
             if((currentLocation.getLatitude() + (currentLocation.getAccuracy()/111111.0) > originalLocation.getLatitude())&&
@@ -383,7 +378,7 @@ public class MainActivity extends Activity {
                 List<DMatch> matchesList = matches.toList();
                 List<DMatch> matches_final= new ArrayList<>();
                 for(int j = 0; j < matchesList.size(); j++) {
-                    if (matchesList.get(j).distance <= 40) {
+                    if (matchesList.get(j).distance <= 30) {
                         matches_final.add(matches.toList().get(j));
                     }
                 }
