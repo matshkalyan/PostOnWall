@@ -1,5 +1,6 @@
 package com.example.iosuser11.postonwall.Network;
 
+import com.example.iosuser11.postonwall.MainActivity;
 import com.example.iosuser11.postonwall.ServerModels.PicsArtPicturesObject;
 import com.example.iosuser11.postonwall.ServerModels.PicsArtPicturesAPI;
 
@@ -15,6 +16,7 @@ import retrofit.converter.JacksonConverter;
 public class CommunicatorPicsArt {
     private static  final String TAG = "CommunicatorPicsArt";
     private static final String ServerPicsArt_URL = "http://api.picsart.com"; // Servers URL : port
+    private PicsArtPicturesObject picsObject;
 
     public void picsArtPictureGet() {
         RestAdapter restAdapter = new RestAdapter.Builder().setEndpoint(ServerPicsArt_URL).setConverter(new JacksonConverter()).build();
@@ -23,7 +25,9 @@ public class CommunicatorPicsArt {
 
             @Override
             public void success(PicsArtPicturesObject picsArtPictureObject, Response response) {
-                System.out.println(picsArtPictureObject.toString());
+              //  System.out.println(picsArtPictureObject.toString());
+                picsObject = picsArtPictureObject;
+                MainActivity.setPicsObject(picsArtPictureObject);
             }
 
             @Override

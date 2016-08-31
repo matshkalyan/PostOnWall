@@ -8,6 +8,8 @@ import com.google.gson.annotations.SerializedName;
 public class Picture {
     @SerializedName("feature_vector")
     public String feature_vector;
+    @SerializedName("photo_position")
+    private String photo_position;
     @SerializedName("key_points")
     public String key_points;
     @SerializedName("x")
@@ -25,11 +27,11 @@ public class Picture {
     @SerializedName("direction_z")
     public float direction_z;
     @SerializedName("id")
-    public long id =  208524893000202L;
+    public long id;
     @SerializedName("_id")
     public String _id = null;
     @SerializedName("url")
-    public String url = "http://cdn106.picsart.com/208524893000202.jpg";
+    public String url;
     @SerializedName("loc")
     public Location loc;
     @SerializedName("response_code")
@@ -40,19 +42,23 @@ public class Picture {
     private double distance = 20.0;  //in meters
 
 
-    public Picture(String feature_vector, String key_points, double x, double y,
+
+    public Picture(String feature_vector, String photo_position, String key_points, double x, double y,
                    double width, double height, float direction_x, float direction_y,
-                   float direction_z, Location loc) {
+                   float direction_z, long id,  String url, Location loc) {
         this.feature_vector = feature_vector;
         this.key_points = key_points;
         this.x = x;
-        this.y = x;
+        this.y = y;
         this.width = width;
         this.height = height;
         this.direction_x = direction_x;
         this.direction_y = direction_y;
         this.direction_z = direction_z;
         this.loc = loc;
+        this.photo_position = photo_position;
+        this.url = url;
+        this.id = id;
     }
 
 
@@ -69,6 +75,9 @@ public class Picture {
 
     public double getDistance() {
         return distance;
+    }
+    public void setDistance(double distance) {
+        this.distance = distance;
     }
 
     public String getFeature_vector() {
@@ -183,4 +192,12 @@ public class Picture {
         this.responseCode = responseCode;
     }
 
+
+    public String getPhoto_position() {
+        return photo_position;
+    }
+
+    public void setPhoto_position(String photo_position) {
+        this.photo_position = photo_position;
+    }
 }

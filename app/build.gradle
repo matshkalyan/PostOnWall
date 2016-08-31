@@ -3,6 +3,8 @@ apply plugin: 'com.android.application'
 android {
     compileSdkVersion 23
     buildToolsVersion "23.0.2"
+    useLibrary  'org.apache.http.legacy'
+
 
     defaultConfig {
         applicationId "com.example.iosuser11.postonwall"

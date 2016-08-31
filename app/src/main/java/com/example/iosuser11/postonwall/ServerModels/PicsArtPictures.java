@@ -19,6 +19,10 @@ public class PicsArtPictures {
         return id;
     }
 
+    public String getIdAsString() {
+        return String.valueOf(id);
+    }
+
     public void setId(long id) {
         this.id = id;
     }

@@ -2,10 +2,13 @@ package com.example.iosuser11.postonwall.Network;
 
 import android.util.Log;
 
+import com.example.iosuser11.postonwall.MainActivity;
 import com.example.iosuser11.postonwall.ServerModels.Picture;
 import com.example.iosuser11.postonwall.ServerModels.PictureObject;
 import com.example.iosuser11.postonwall.ServerModels.PicturesAPI;
 import com.jakewharton.retrofit.Ok3Client;
+
+import org.opencv.core.Mat;
 
 import java.util.concurrent.TimeUnit;
 
@@ -22,6 +25,7 @@ import retrofit.converter.JacksonConverter;
 public class Communicator {
     private static  final String TAG = "Communicator";
     private static final String Server_URL = "http://192.168.40.33:3011"; // Servers URL : port
+    private boolean finished = false;
 
     public void picturePost(Picture picture) {
 
@@ -39,7 +43,7 @@ public class Communicator {
         Callback<Picture> callback = new Callback<Picture>() {
             @Override
             public void success(Picture picture, Response response) {
-                System.out.println(response.getStatus());
+                System.out.println("POST SUCCESS" + response.getStatus());
             }
 
             @Override
@@ -61,12 +65,17 @@ public class Communicator {
         Callback<PictureObject> callback = new Callback<PictureObject>() {
             @Override
             public void success(PictureObject pictureObject, Response response) {
-                System.out.println("Success:  "+pictureObject.toString());
+                System.out.println("GET SUCCESS:  "+pictureObject.toString());
+                finished = true;
+                MainActivity.setPicObject(pictureObject);
+
+
+
             }
 
             @Override
             public void failure(RetrofitError error) {
-                System.out.println("FAIL");
+                System.out.println("FAIL GET");
             }
         };
 
@@ -74,4 +83,16 @@ public class Communicator {
         communicatorInterface.getData(coordinates, distance, callback);
 
     }
+
+
+    public boolean isFinished() {
+       return finished;
+    }
+
+    public void setFinished(boolean finished) {
+        this.finished = finished;
+    }
+
+
 }
+
