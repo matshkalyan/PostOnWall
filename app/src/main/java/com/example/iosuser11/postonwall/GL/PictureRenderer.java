@@ -142,6 +142,7 @@ public class PictureRenderer implements GLSurfaceView.Renderer
 
         if(pttvel) {
             mat = motionSensors.getRotationMatrix();
+            float[] translateXYZ = motionSensors.getTranslationXYZ();
 
             Matrix.transposeM(matCacheTranspose, 0, matCache, 0);
             multiplyMM(result, 0, mat, 0, matCacheTranspose, 0);
@@ -150,7 +151,7 @@ public class PictureRenderer implements GLSurfaceView.Renderer
             multiplyMM(viewProjectionMatrix, 0, projectionMatrix, 0, tmp, 0);
 
             translateM(viewProjectionMatrix, 0, result[8],  result[9],  -(d)*result[10]);
-//            translateM(viewProjectionMatrix, 0, (float)translateX, (float)translateY, 0);
+//            translateM(viewProjectionMatrix, 0, translateXYZ[0], translateXYZ[1], translateXYZ[2]);
 
             anglex = Math.atan2((double)result[7], (double)result[8]);
             angley = Math.atan2((double)-result[6], Math.sqrt(result[7] * result[7] + result[8] * result[8]));
