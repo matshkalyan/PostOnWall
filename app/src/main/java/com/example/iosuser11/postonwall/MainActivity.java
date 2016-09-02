@@ -40,6 +40,7 @@ import org.opencv.core.DMatch;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfDMatch;
 import org.opencv.core.MatOfKeyPoint;
+import org.opencv.core.Size;
 import org.opencv.features2d.DescriptorExtractor;
 import org.opencv.features2d.DescriptorMatcher;
 import org.opencv.features2d.FeatureDetector;
@@ -191,12 +192,12 @@ public class MainActivity extends Activity {
                     currentPicturesList = new ArrayList<>();
                     currentPicturesIndexesList = new ArrayList();
                     messages.setVisibility(View.VISIBLE);
-//                    messages.setText("There are " + nearbyPicturesList.size() + " pictures posted nearby.");
                     trackingState = true;
                     new AsyncTask<Void, Void, Void>() {
                         @Override
                         protected Void doInBackground(Void... voids) {
-                            findPictureOnCurrentWall();
+//                            findPictureOnCurrentWall();
+                            tracking();
                             return null;
                         }
                     }.execute();
@@ -317,7 +318,7 @@ public class MainActivity extends Activity {
         MatOfKeyPoint keypointsCurrent = new MatOfKeyPoint();
         Mat descriptorsCurrent = new Mat();
 
-        getCurrentCameraFrame(imgCurrent);
+        imgCurrent = getCurrentCameraFrame();
         detector.detect(imgCurrent,keypointsCurrent);
         descriptor.compute(imgCurrent, keypointsCurrent, descriptorsCurrent);
 
@@ -349,60 +350,83 @@ public class MainActivity extends Activity {
         messages.setText("There are " + nearbyPicturesList.size() + " pictures posted nearby.");
     }
 
-    void getCurrentCameraFrame(Mat imgCurrent) {
+    Mat getCurrentCameraFrame() {
+        Mat img = new Mat();
         byte[] data = cameraPreview.getCurrentFrame();
         pre.put(0, 0, data);
-        Imgproc.cvtColor(pre, imgCurrent, Imgproc.COLOR_YUV2GRAY_NV21);
-        Core.transpose(imgCurrent, imgCurrent);
-        Core.flip(imgCurrent, imgCurrent, 1);
+        Imgproc.cvtColor(pre, img, Imgproc.COLOR_YUV2GRAY_NV21);
+        Core.transpose(img, img);
+        Core.flip(img, img, 1);
+        Imgproc.resize(img, img,new Size(360,426),0,0,Imgproc.INTER_NEAREST);
+        return img;
     }
 
-    void findPictureOnCurrentWall(){
-        //every cycle of this while loop tries to find a picture posted on the wall being viewed at the time of this cycle
+    void tracking() {
         while(trackingState) {
-            try {
-                Thread.sleep(1);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+            if(keypointsCurrent == null || descriptorsCurrent == null) {
+                //if we have no keypoints and descriptors of the previous frame, make the previous keypoints and descriptors equal to the keypoints and descriptors of the current frame
+                keypointsPrevious = new MatOfKeyPoint();
+                descriptorsPrevious = new Mat();
+                detector.detect(imgCurrent, keypointsPrevious);
+                descriptor.compute(imgCurrent, keypointsPrevious, descriptorsPrevious);
+            } else {
+                keypointsPrevious = keypointsCurrent;
+                descriptorsPrevious = descriptorsCurrent;
             }
-            getCurrentCameraFrame(imgCurrent);
-            keypointsPrevious = keypointsCurrent;
-            descriptorsPrevious = descriptorsCurrent;
+            //update the keypoints and descriptors of the current frame
+            imgCurrent = getCurrentCameraFrame();
+            keypointsCurrent = new MatOfKeyPoint();
+            descriptorsCurrent = new Mat();
             detector.detect(imgCurrent, keypointsCurrent);
             descriptor.compute(imgCurrent, keypointsCurrent, descriptorsCurrent);
 
-            Mat descriptorsOriginal;
-            for(int i = 0; i < nearbyPicturesList.size() && !imageFound; i++) {
-                //take descriptors of the wall of picture[i], match it with the wall being currently displayed
-                descriptorsOriginal = nearbyPicturesList.get(i).getDescriptors();
-                matcher.match(descriptorsCurrent, descriptorsOriginal, matches);
-                List<DMatch> matchesList = matches.toList();
-                List<DMatch> matches_final= new ArrayList<>();
-                for(int j = 0; j < matchesList.size(); j++) {
-                    if (matchesList.get(j).distance <= 30) {
-                        matches_final.add(matches.toList().get(j));
-                    }
-                }
-                if (matches_final.size() > 150) {
-                    imageFound = true;
-                    currentPictureIndex = i;
-                }
-                if(imageFound && !pictureIsViewed(currentPictureIndex)) {
-                    currentPicturesIndexesList.add(currentPictureIndex);
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            newTrackedPictureView(nearbyPicturesList.get(currentPictureIndex).getPicture());
-                            currentPicturesList.get(currentPicturesList.size() - 1).getRenderer().updateDistance(18 - nearbyPicturesList.get(currentPictureIndex).getScale());
-                        }
-                    });
-                }
-                if(newPictureAdded)
-                    currentPicturesList.get(currentPicturesList.size() - 1).getRenderer().attachToWall();
-            }
-            imageFound = false;
-            newPictureAdded = false;
+            trackCurrentPictures();
+            findPictureOnCurrentWall();
         }
+    }
+
+    void trackCurrentPictures() {
+        //do image processing to translate the pictures currently being previewed
+    }
+
+    void findPictureOnCurrentWall() {
+        try {
+            Thread.sleep(1);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        Mat descriptorsOriginal;
+        for(int i = 0; i < nearbyPicturesList.size() && !imageFound; i++) {
+            //take descriptors of the wall of picture[i], match it with the wall being currently displayed
+            descriptorsOriginal = nearbyPicturesList.get(i).getDescriptors();
+            matcher.match(descriptorsCurrent, descriptorsOriginal, matches);
+            List<DMatch> matchesList = matches.toList();
+            List<DMatch> matches_final= new ArrayList<>();
+            for(int j = 0; j < matchesList.size(); j++) {
+                if (matchesList.get(j).distance <= 30) {
+                    matches_final.add(matches.toList().get(j));
+                }
+            }
+            if (matches_final.size() > 150) {
+                imageFound = true;
+                currentPictureIndex = i;
+            }
+            if(imageFound && !pictureIsViewed(currentPictureIndex)) {
+                currentPicturesIndexesList.add(currentPictureIndex);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        newTrackedPictureView(nearbyPicturesList.get(currentPictureIndex).getPicture());
+                        currentPicturesList.get(currentPicturesList.size() - 1).getRenderer().updateDistance(18 - nearbyPicturesList.get(currentPictureIndex).getScale());
+                    }
+                });
+            }
+            if(newPictureAdded)
+                currentPicturesList.get(currentPicturesList.size() - 1).getRenderer().attachToWall();
+        }
+        imageFound = false;
+        newPictureAdded = false;
     }
 
     boolean pictureIsViewed(int index) {
