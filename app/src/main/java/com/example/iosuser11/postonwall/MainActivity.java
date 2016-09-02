@@ -221,15 +221,22 @@ public class MainActivity extends Activity {
                     currentPicturesList = new ArrayList<PicViewAndRend>();
                     currentPicturesIndexesList = new ArrayList();
                     messages.setVisibility(View.VISIBLE);
-                    messages.setText("There are " + nearbyPicturesList.size() +" pictures posted nearby.");
+                    //messages.setText("There are " + nearbyPicturesList.size() +" pictures posted nearby.");
                     trackingState = true;
                     new AsyncTask<Void, Void, Void>() {
                         @Override
                         protected Void doInBackground(Void... voids) {
                             while (!communicator.isFinished() || picObject == null) {
                       //  System.out.println("NOT! NOT!");
-                    }
-                             makeNormalObjectsList();
+                            }
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    messages.setText("There are " + picObject.getPhotos().size() +" pictures posted nearby.");
+                                }
+                            });
+
+                            makeNormalObjectsList();
                             communicator.setFinished(false);
 
                            performImageMatch();
@@ -491,7 +498,7 @@ public class MainActivity extends Activity {
                         matches_final.add(matches.toList().get(j));
                     }
                 }
-                if (matches_final.size() > 200) {
+                if (matches_final.size() > 125) {
                     imageFound = true;
                     currentPictureIndex = i;
                 }

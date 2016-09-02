@@ -24,8 +24,17 @@ public class Table {
 
     private final VertexArray vertexArray;
 
-    public Table()
+    public Table(float height, float width)
     {
+
+        final float[] VERTEX_DATA = {
+                0f,              0f,                      0.5f,  0.5f,
+                -width / 900f,   -height / 900f,           0f,    1f,
+                width / 900f,   -height / 900f,           1f,    1f,
+                width / 900f,    height / 900f,           1f,    0f,
+                -width / 900f,    height / 900f,           0f,    0f,
+                -width / 900f,   -height / 900f,           0f,    1f
+        };
         vertexArray = new VertexArray(VERTEX_DATA);
     }
 

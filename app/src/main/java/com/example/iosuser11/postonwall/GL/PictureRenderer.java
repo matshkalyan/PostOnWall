@@ -40,12 +40,14 @@ public class PictureRenderer implements GLSurfaceView.Renderer
     float[] mat = new float[16];
     float[] matCache = new float[16];
     float[] tmp = new float[16];
-
     float[] matCacheTranspose = new float[16];
     float[] result = new float[16];
 
     private boolean useCustomImge = false;
     private Bitmap image;
+
+    private float imageHeight;
+    private float imageWidth;
 
     private Table table;
     private GRVCoordinates grvCoordinates;
@@ -70,6 +72,9 @@ public class PictureRenderer implements GLSurfaceView.Renderer
         this.image = image;
         useCustomImge = true;
 
+        imageHeight = (float)image.getHeight();
+        imageWidth = (float)image.getWidth();
+
     }
 
     @Override
@@ -78,7 +83,7 @@ public class PictureRenderer implements GLSurfaceView.Renderer
 
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
-        table = new Table();
+        table = new Table(imageHeight, imageWidth);
 
         textureProgram = new TextureShaderProgram(context);
         texture = TextureHelper.loadTexture(context, image);

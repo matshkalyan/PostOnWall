@@ -30,13 +30,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PicsArtActivity extends AppCompatActivity {
-    private List<Bitmap> bitmapList = new ArrayList<>();
+    private static List<Bitmap> bitmapList = new ArrayList<>();
     private ProgressDialog simpleWaitDialog;
     private GridView gridView;
     private String[][] urlsAndIds;
+    private static List<String> idS = new ArrayList<>();
     private String picsImageUrl;
     private String picsImageId;
-    private String folderPath;
+    private String folderPath = "/storage/emulated/0/Pictures/ShaderCam";
     private String chosenImagePath;
 
 
@@ -51,7 +52,7 @@ public class PicsArtActivity extends AppCompatActivity {
         for(int i = 0; i < urlsAndIds.length; i++) {
             for (int j = 0; j < urlsAndIds[i].length; j++) {
                 if (i == 0) {
-                    urlsAndIds[i][j] = MainActivity.getPicsObject().getResponse().get(j).getUrl() + "?r1024x1024";
+                    urlsAndIds[i][j] = MainActivity.getPicsObject().getResponse().get(j).getUrl() + "?r480x480";
                 }
                 if(i == 1) {
                     urlsAndIds[i][j] = MainActivity.getPicsObject().getResponse().get(j).getIdAsString();
@@ -118,7 +119,25 @@ public class PicsArtActivity extends AppCompatActivity {
 
     }
 
-
+//    @Override
+//    protected void onResume() {
+//        super.onResume();
+//        setContentView(R.layout.activity_pics_art);
+//
+//        for(int i = 0; i < urlsAndIds.length; i++) {
+//            for (int j = 0; j < urlsAndIds[i].length; j++) {
+//                if (i == 0) {
+//                    urlsAndIds[i][j] = MainActivity.getPicsObject().getResponse().get(j).getUrl() + "?r480x480";
+//                }
+//                if(i == 1) {
+//                    urlsAndIds[i][j] = MainActivity.getPicsObject().getResponse().get(j).getIdAsString();
+//                }
+//            }
+//        }
+//
+//
+//
+//    }
 
     private class ImageDownloader extends AsyncTask<String[], Void, List<Bitmap>> {
 
@@ -135,7 +154,13 @@ public class PicsArtActivity extends AppCompatActivity {
         protected List<Bitmap> doInBackground(String[][] strings) {
             // for(int j = 0; j < strings[0].length; j++) {
             for(int j = 0; j < 3; j++) {
-                bitmapList.add(downloadBitmap(strings[0][j], strings[1][j]));
+                if (!idS.contains(strings[1][j])) {
+                    bitmapList.add(downloadBitmap(strings[0][j], strings[1][j]));
+                    idS.add(strings[1][j]);
+                }
+                else {
+
+                }
             }
             return bitmapList;
         }
@@ -219,7 +244,7 @@ public class PicsArtActivity extends AppCompatActivity {
                         ImageStore img = new ImageStore(bitmap);
                         img.setId(id);
                         img.store(ImageStore.SAVE_AS_BITMAP);
-                        folderPath = img.getFolderPath();
+                      //  folderPath = img.getFolderPath();
                         Bitmap resizedBitmap = Bitmap.createScaledBitmap(bitmap, 960, 730, false);
                         return resizedBitmap;
                     } finally {
