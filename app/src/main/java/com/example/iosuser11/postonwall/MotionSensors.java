@@ -29,7 +29,7 @@ public class MotionSensors implements SensorEventListener {
 
         mSensorManager.registerListener(this, gameRotationVector, SensorManager.SENSOR_DELAY_GAME);
         mSensorManager.registerListener(this, rotationVector, SensorManager.SENSOR_DELAY_GAME);
-        mSensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+        mSensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_GAME);
     }
 
     public float[] getRotationMatrix() {

@@ -191,7 +191,7 @@ public class MainActivity extends Activity {
                     currentPicturesList = new ArrayList<>();
                     currentPicturesIndexesList = new ArrayList();
                     messages.setVisibility(View.VISIBLE);
-                    messages.setText("There are " + nearbyPicturesList.size() + " / " + allPicturesList.size() + " pictures posted nearby.");
+//                    messages.setText("There are " + nearbyPicturesList.size() + " pictures posted nearby.");
                     trackingState = true;
                     new AsyncTask<Void, Void, Void>() {
                         @Override
@@ -214,7 +214,7 @@ public class MainActivity extends Activity {
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
-                pictureRenderer.updateDistance(20-i);
+                pictureRenderer.updateDistance(18 - i);
             }
 
             @Override
@@ -346,6 +346,7 @@ public class MainActivity extends Activity {
                 }
             }
         }
+        messages.setText("There are " + nearbyPicturesList.size() + " pictures posted nearby.");
     }
 
     void getCurrentCameraFrame(Mat imgCurrent) {
@@ -382,7 +383,7 @@ public class MainActivity extends Activity {
                         matches_final.add(matches.toList().get(j));
                     }
                 }
-                if (matches_final.size() > 200) {
+                if (matches_final.size() > 150) {
                     imageFound = true;
                     currentPictureIndex = i;
                 }
@@ -392,7 +393,7 @@ public class MainActivity extends Activity {
                         @Override
                         public void run() {
                             newTrackedPictureView(nearbyPicturesList.get(currentPictureIndex).getPicture());
-                            currentPicturesList.get(currentPicturesList.size() - 1).getRenderer().updateDistance(20- nearbyPicturesList.get(currentPictureIndex).getScale());
+                            currentPicturesList.get(currentPicturesList.size() - 1).getRenderer().updateDistance(18 - nearbyPicturesList.get(currentPictureIndex).getScale());
                         }
                     });
                 }
