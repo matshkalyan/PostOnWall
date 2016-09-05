@@ -62,6 +62,8 @@ public class MainActivity extends Activity {
     //UI stuff
     private FrameLayout wallView;
     private CameraPreview cameraPreview;
+    private int camWidth;
+    private int camHeight;
     private PictureView pictureView;
     private PictureRenderer pictureRenderer;
     private Button post;
@@ -88,7 +90,6 @@ public class MainActivity extends Activity {
 
     //flags
     private boolean afterOnPause = false;
-    private boolean cameraPermissionGranted = false;
     private boolean trackingState = false;
     private boolean photoChosen = false;
     private boolean imageFound = false;
@@ -198,7 +199,6 @@ public class MainActivity extends Activity {
                     new AsyncTask<Void, Void, Void>() {
                         @Override
                         protected Void doInBackground(Void... voids) {
-//                            findPictureOnCurrentWall();
                             tracking();
                             return null;
                         }
@@ -244,7 +244,9 @@ public class MainActivity extends Activity {
 
         if(permissionsToBeRequested.size() == 0) {
             cameraPreview = new CameraPreview(getApplicationContext());
-            pre = new Mat(cameraPreview.getmPreviewSize().height+cameraPreview.getmPreviewSize().height/2, cameraPreview.getmPreviewSize().width, CvType.CV_8UC1);
+            camWidth = cameraPreview.getPreviewSize().width;
+            camHeight = cameraPreview.getPreviewSize().height;
+            pre = new Mat(camHeight + camHeight/2, camWidth, CvType.CV_8UC1);
             wallView.addView(cameraPreview);
             gpsTracker = new GPSTracker(this);
         } else {
@@ -263,7 +265,7 @@ public class MainActivity extends Activity {
                     finish();
                 } else {
                     cameraPreview = new CameraPreview(getApplicationContext());
-                    pre = new Mat(cameraPreview.getmPreviewSize().height+cameraPreview.getmPreviewSize().height/2, cameraPreview.getmPreviewSize().width, CvType.CV_8UC1);
+                    pre = new Mat(camHeight + camHeight/2, camWidth, CvType.CV_8UC1);
                     wallView.addView(cameraPreview);
                     gpsTracker = new GPSTracker(this);
                 }
@@ -300,7 +302,7 @@ public class MainActivity extends Activity {
                     } catch (FileNotFoundException e) {
                         e.printStackTrace();
                     }
-                    pictureView = new PictureView(getApplicationContext(), cameraPreview.getmPreviewSize().width, cameraPreview.getmPreviewSize().height);
+                    pictureView = new PictureView(getApplicationContext(), camWidth, camHeight);
                     pictureView.setEGLContextClientVersion(2);
                     pictureView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
                     pictureView.setEGLConfigChooser(8,8,8,8,0,0);
@@ -370,26 +372,18 @@ public class MainActivity extends Activity {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-
-            if(keypointsCurrent == null || descriptorsCurrent == null) {
-                //if we have no keypoints and descriptors of the previous frame, make the previous keypoints and descriptors equal to the keypoints and descriptors of the current frame
-                keypointsPrevious = new MatOfKeyPoint();
-                descriptorsPrevious = new Mat();
-                detector.detect(imgCurrent, keypointsPrevious);
-                descriptor.compute(imgCurrent, keypointsPrevious, descriptorsPrevious);
-            } else {
-                keypointsPrevious = keypointsCurrent;
-                descriptorsPrevious = descriptorsCurrent;
-            }
-            //update the keypoints and descriptors of the current frame
+            keypointsPrevious = keypointsCurrent;
+            descriptorsPrevious = descriptorsCurrent;
             imgCurrent = getCurrentCameraFrame();
             keypointsCurrent = new MatOfKeyPoint();
             descriptorsCurrent = new Mat();
             detector.detect(imgCurrent, keypointsCurrent);
             descriptor.compute(imgCurrent, keypointsCurrent, descriptorsCurrent);
 
+            if(keypointsPrevious != null && descriptorsPrevious != null) {
 //            trackCurrentPictures();
-            findPictureOnCurrentWall();
+                findPictureOnCurrentWall();
+            }
         }
     }
 
@@ -484,7 +478,7 @@ public class MainActivity extends Activity {
     }
 
     void newTrackedPictureView(Bitmap image) {
-        PictureView pView = new PictureView(getApplicationContext(), cameraPreview.getmPreviewSize().width, cameraPreview.getmPreviewSize().height);
+        PictureView pView = new PictureView(getApplicationContext(), camWidth, camHeight);
         pView.setEGLContextClientVersion(2);
         pView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
         pView.setEGLConfigChooser(8,8,8,8,0,0);
@@ -511,7 +505,6 @@ public class MainActivity extends Activity {
     protected void onPause() {
         super.onPause();
         afterOnPause = true;
-        if (cameraPermissionGranted)
-            cameraPreview.pause();
+        cameraPreview.pause();
     }
 }

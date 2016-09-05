@@ -153,9 +153,9 @@ public class PictureRenderer implements GLSurfaceView.Renderer
             translateM(viewProjectionMatrix, 0, result[8],  result[9],  -(d)*result[10]);
 //            translateM(viewProjectionMatrix, 0, translateXYZ[0], translateXYZ[1], translateXYZ[2]);
 
-            anglex = Math.atan2((double)result[7], (double)result[8]);
-            angley = Math.atan2((double)-result[6], Math.sqrt(result[7] * result[7] + result[8] * result[8]));
-            anglez = Math.atan2((double)result[3], (double)result[0]);
+//            anglex = Math.atan2((double)result[7], (double)result[8]);
+//            angley = Math.atan2((double) - result[6], Math.sqrt(result[7] * result[7] + result[8] * result[8]));
+//            anglez = Math.atan2((double)result[3], (double)result[0]);
         }
         else
         {

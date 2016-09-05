@@ -91,7 +91,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         return currentFrame;
     }
 
-    Camera.Size getmPreviewSize() {
+    Camera.Size getPreviewSize() {
         return camera.getParameters().getPreviewSize();
     }
 
