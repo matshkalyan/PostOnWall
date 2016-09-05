@@ -40,6 +40,7 @@ import org.opencv.core.DMatch;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfDMatch;
 import org.opencv.core.MatOfKeyPoint;
+import org.opencv.core.Point;
 import org.opencv.core.Size;
 import org.opencv.features2d.DescriptorExtractor;
 import org.opencv.features2d.DescriptorMatcher;
@@ -80,6 +81,7 @@ public class MainActivity extends Activity {
     Mat descriptorsPrevious;
     Mat descriptorsCurrent;
     MatOfDMatch matches;
+    MatOfDMatch successiveMatches;
 
     //Sensors
     private GPSTracker gpsTracker;
@@ -363,6 +365,12 @@ public class MainActivity extends Activity {
 
     void tracking() {
         while(trackingState) {
+            try {
+                Thread.sleep(1);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
             if(keypointsCurrent == null || descriptorsCurrent == null) {
                 //if we have no keypoints and descriptors of the previous frame, make the previous keypoints and descriptors equal to the keypoints and descriptors of the current frame
                 keypointsPrevious = new MatOfKeyPoint();
@@ -380,22 +388,60 @@ public class MainActivity extends Activity {
             detector.detect(imgCurrent, keypointsCurrent);
             descriptor.compute(imgCurrent, keypointsCurrent, descriptorsCurrent);
 
-            trackCurrentPictures();
+//            trackCurrentPictures();
             findPictureOnCurrentWall();
         }
     }
 
     void trackCurrentPictures() {
         //do image processing to translate the pictures currently being previewed
+        //match previous and current keypoints
+        //match current frame with the previous frame to compute homography and update all of the picures in the currentPicturesList
+        if(currentPicturesList.size() > 0) {
+            successiveMatches = new MatOfDMatch();
+            matcher.match(descriptorsCurrent, descriptorsPrevious, successiveMatches);
+            List<DMatch> matchesList2 = successiveMatches.toList();
+            List<DMatch> matches_final2 = new ArrayList<>();
+            for(int j = 0; j < matchesList2.size(); j++) {
+                if (matchesList2.get(j).distance <= 40) {
+                    matches_final2.add(successiveMatches.toList().get(j));
+                }
+            }
+            List<Point> objpoints = new ArrayList<>();
+            List<Point> scenepoints = new ArrayList<>();
+            for(int i=0; i < matches_final2.size(); i++) {
+                objpoints.add(keypointsPrevious.toList().get((matches_final2.get(i)).queryIdx).pt);
+                scenepoints.add(keypointsCurrent.toList().get((matches_final2.get(i)).trainIdx).pt);
+            }
+            int sumDistX = 0;
+            int sumDistY = 0;
+            for(int i=0; i < matches_final2.size(); i++) {
+                sumDistX += - objpoints.get(i).x + scenepoints.get(i).x;
+                sumDistY += - objpoints.get(i).x + scenepoints.get(i).x;
+            }
+            for(int i = 0; i < currentPicturesList.size(); i++) {
+                currentPicturesList.get(i).getView().setTranslationX(sumDistX / matches_final2.size());
+//                    currentPicturesList.get(i).getView().setTranslationY(sumDistY / matches_final2.size());
+            }
+
+
+//            MatOfPoint2f obj = new MatOfPoint2f();
+//            obj.fromList(objpoints);
+//            MatOfPoint2f scene = new MatOfPoint2f();
+//            scene.fromList(scenepoints);
+//            Mat homography = Calib3d.findHomography(obj, scene, Calib3d.RANSAC, 2);
+//            Log.d("", "translation is: " + homography.get(0, 2)[0] + homography.get(1, 2)[0]);
+//            for(int i = 0; i < currentPicturesList.size(); i++) {
+////                currentPicturesList.get(i).getRenderer().setTranslation(homography.get(0, 2)[0], homography.get(1, 2)[0]);
+//                    currentPicturesList.get(i).getView().setTranslationX(1 * (float) homography.get(0, 2)[0]);
+//                    currentPicturesList.get(i).getView().setTranslationY(1 * (float) homography.get(1, 2)[0]);
+//            }
+
+        }
+
     }
 
     void findPictureOnCurrentWall() {
-        try {
-            Thread.sleep(1);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
         Mat descriptorsOriginal;
         for(int i = 0; i < nearbyPicturesList.size() && !imageFound; i++) {
             //take descriptors of the wall of picture[i], match it with the wall being currently displayed
