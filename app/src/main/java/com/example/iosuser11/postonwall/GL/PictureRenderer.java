@@ -5,8 +5,6 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
-import android.opengl.Matrix;
-import android.util.Log;
 
 import com.example.iosuser11.postonwall.MotionSensors;
 import com.example.iosuser11.postonwall.GL.util.MatrixHelper;
@@ -18,186 +16,128 @@ import javax.microedition.khronos.opengles.GL10;
 import static android.opengl.GLES20.GL_COLOR_BUFFER_BIT;
 import static android.opengl.GLES20.glClear;
 import static android.opengl.GLES20.glClearColor;
-import static android.opengl.GLES20.glGetError;
 import static android.opengl.GLES20.glViewport;
-import static android.opengl.Matrix.multiplyMM;
-import static android.opengl.Matrix.setIdentityM;
-import static android.opengl.Matrix.setLookAtM;
-import static android.opengl.Matrix.translateM;
+import static android.opengl.Matrix.*;
 
 public class PictureRenderer implements GLSurfaceView.Renderer
 {
     private final Context context;
 
-    private final float[] projectionMatrix = new float[16];
-    private final float[] modelMatrix = new float[16];
-    private final float[] viewMatrix = new float[16];
-    private final float[] viewProjectionMatrix = new float[16];
-    private final float[] modelViewProjectionMatrix = new float[16];
-
-    float[] mat = new float[16];
-    float[] matCache = new float[16];
-    float[] tmp = new float[16];
-
-    float[] matCacheTranspose = new float[16];
-    float[] result = new float[16];
-
-    private boolean useCustomImge = false;
+    private TextureShaderProgram textureProgram;
+    private int texture;
+    private Table table;
     private Bitmap image;
-
     private float imageHeight;
     private float imageWidth;
 
-    private Table table;
+    private final float[] identMatrix = new float[16];
+    private final float[] projectionMatrix = new float[16];
+    private final float[] viewMatrix = new float[16];
+    private float[] modelMatrix = new float[16];
+    private final float[] viewProjectionMatrix = new float[16];
+    private final float[] modelViewProjectionMatrix = new float[16];
+    private final float[] finalTransformMatrix = new float[16];
+
     private MotionSensors motionSensors;
+    float[] rotationMatrix = new float[16];
+    float[] matCache = new float[16];
+    float[] matCacheTranspose = new float[16];
+    float[] tmp = new float[16];
 
-    private TextureShaderProgram textureProgram;
+    float[] result = new float[16];
 
-    private int texture;
     private boolean pttvel = false;
 
     private float d = 10;
 
-    double anglex;
-    double angley;
-    double anglez;
-
 //    double translateX;
 //    double translateY;
 
-    public PictureRenderer(Activity activity, Bitmap image)
-    {
+    public PictureRenderer(Activity activity, Bitmap image) {
         this.context = activity.getApplicationContext();
-
         motionSensors = new MotionSensors(activity);
-
         this.image = image;
-        useCustomImge = true;
-
         imageHeight = (float) image.getHeight();
         imageWidth = (float) image.getWidth();
+        setIdentityM(identMatrix, 0);
+        modelMatrix = identMatrix.clone();
     }
 
     @Override
-    public void onSurfaceCreated(GL10 glUnused, EGLConfig config)
-    {
+    public void onSurfaceCreated(GL10 glUnused, EGLConfig config) {
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         table = new Table(imageHeight, imageWidth);
         textureProgram = new TextureShaderProgram(context);
         texture = TextureHelper.loadTexture(context, image);
+
     }
 
     @Override
-    public void onSurfaceChanged(GL10 glUnused, int width, int height)
-    {
-        // Set the OpenGL viewport to fill the entire surface.
+    public void onSurfaceChanged(GL10 glUnused, int width, int height) {
         glViewport(0, 0, width, height);
-
         MatrixHelper.perspectiveM(projectionMatrix, 45, (float) width / (float) height, 1f, 1000f);
-
-        setLookAtM(
-//                float[] rm
-//                This is the destination array.
-                viewMatrix,
-
-//                int rmOffset
-//                setLookAtM() will begin writing the result at this offset into rm
-                0,
-
-//                float eyeX, eyeY, eyeZ
-//                This is where the eye will be. Everything in the
-//                scene will appear as if we’re viewing it from this
-//                point.
-
-//                With an eye of (0, 1.2, 2.2), meaning your eye will be 1.2
-//                units above the x-z plane and 2.2 units back. In other words, everything in
-//                the scene will appear 1.2 units below you and 2.2 units in front of you.
-
+        setLookAtM(viewMatrix, 0,
                 0f, 0f, 0.1f,
-
-//                float centerX, centerY,centerZ
-//                This is where the eye is looking; this position will appear in the center of the scene.
-
-//                A center of (0, 0, 0) means you’ll be looking down toward the origin in front of you
                 0f, 0f, 0f,
-
-//                float upX, upY, upZ
-//                If we were talking about your eyes, then this is
-//                where your head would be pointing. An upY of 1
-//                means your head would be pointing straight up.
-
-//                An up of (0, 1, 0) means that your head will be pointing straight up and the scene won’t be rotated to either side
                 0f, 1f, 0f);
     }
 
 
     @Override
-    public void onDrawFrame(GL10 glUnused)
-    {
-        // Clear the rendering surface.
+    public void onDrawFrame(GL10 glUnused) {
         glClear(GL_COLOR_BUFFER_BIT);
-
         GLES20.glEnable(GL10.GL_CULL_FACE);     // enable face culling feature
         GLES20.glCullFace(GL10.GL_BACK);        // specify which faces to not draw
 
-        if(pttvel) {
-            mat = motionSensors.getRotationMatrix();
-            float[] translateXYZ = motionSensors.getTranslationXYZ();
+        rotationMatrix = motionSensors.getRotationMatrix();
+//        float[] translateXYZ = motionSensors.getTranslationXYZ();
 
-            Matrix.transposeM(matCacheTranspose, 0, matCache, 0);
-            multiplyMM(result, 0, mat, 0, matCacheTranspose, 0);
+        if(pttvel && rotationMatrix != null) {
 
-            multiplyMM(tmp, 0, viewMatrix, 0, result, 0);
-            multiplyMM(viewProjectionMatrix, 0, projectionMatrix, 0, tmp, 0);
+            multiplyMM(finalTransformMatrix, 0, projectionMatrix, 0, identMatrix, 0);
+            multiplyMM(finalTransformMatrix, 0, finalTransformMatrix, 0, viewMatrix, 0);
+            multiplyMM(finalTransformMatrix, 0, finalTransformMatrix, 0, modelMatrix, 0);
 
-            translateM(viewProjectionMatrix, 0, result[8],  result[9],  -(d)*result[10]);
-//            translateM(viewProjectionMatrix, 0, translateXYZ[0], translateXYZ[1], translateXYZ[2]);
+            //translation due to rotation and seekbar
+            transposeM(matCacheTranspose, 0, matCache, 0);
+            multiplyMM(result, 0, rotationMatrix, 0, matCacheTranspose, 0);
+            translateM(finalTransformMatrix, 0, -(d)*result[8],  -(d)*result[9],  -(d)*result[10]);
 
-//            anglex = Math.atan2((double)result[7], (double)result[8]);
-//            angley = Math.atan2((double) - result[6], Math.sqrt(result[7] * result[7] + result[8] * result[8]));
-//            anglez = Math.atan2((double)result[3], (double)result[0]);
-        }
-        else
-        {
+            //rotation
+            multiplyMM(finalTransformMatrix, 0, finalTransformMatrix, 0, rotationMatrix, 0);
+            multiplyMM(finalTransformMatrix, 0, finalTransformMatrix, 0, matCacheTranspose, 0);
+            //no scale
+
+
+        } else if (!pttvel) {
             matCache = motionSensors.getRotationMatrix();
-            multiplyMM(viewProjectionMatrix, 0, projectionMatrix, 0, viewMatrix, 0);
-            translateM(viewProjectionMatrix, 0, 0 , 0 ,   -(d) );
+
+            multiplyMM(finalTransformMatrix, 0, projectionMatrix, 0, identMatrix, 0);
+            multiplyMM(finalTransformMatrix, 0, finalTransformMatrix, 0, viewMatrix, 0);
+            multiplyMM(finalTransformMatrix, 0, finalTransformMatrix, 0, modelMatrix, 0);
+            translateM(finalTransformMatrix, 0, 0, 0, -(d));
+            //no rotation
+            //no scale
         }
 
         // Draw the table.
-        positionTableInScene();
+//        positionTableInScene();
         textureProgram.useProgram();
-        textureProgram.setUniforms(modelViewProjectionMatrix, texture);
+        textureProgram.setUniforms(finalTransformMatrix, texture);
         table.bindData(textureProgram);
         table.draw();
-        int err =  glGetError();
-        if(err != 0) {
-            Log.d("", "onDrawFrame: " + err);
-        }
     }
 
-    public void attachToWall(){pttvel = true;}
-//    public void detachFromWall(){pttvel = false;}
+    public void attachToWall() {
+        pttvel = true;
+    }
 
-    private void positionTableInScene()
-    {
-        // The table is defined in terms of X & Y coordinates, so we rotate it
-        // 90 degrees to lie flat on the XZ plane.
+    private void positionTableInScene() {
         setIdentityM(modelMatrix, 0);
-//        rotateM(modelMatrix, 0, 90f, 1f, 0f, 0f);
         multiplyMM(modelViewProjectionMatrix, 0, viewProjectionMatrix, 0, modelMatrix, 0);
     }
 
     public void updateDistance(int d) {
-        this.d =(float) d;
+        this.d = (float) d;
     }
-
-    double[] getAngleXYZ() {
-        return new double[]{anglex, angley, anglez};
-    }
-
-//    public void setTranslation(double x, double y) {
-//        translateX = x;
-//        translateY = y;
-//    }
 }

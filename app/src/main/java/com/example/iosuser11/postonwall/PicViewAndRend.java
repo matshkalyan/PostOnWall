@@ -1,6 +1,7 @@
 package com.example.iosuser11.postonwall;
 
 import com.example.iosuser11.postonwall.GL.PictureRenderer;
+import com.example.iosuser11.postonwall.GL.PictureView;
 
 /**
  * Created by iosuser11 on 8/25/16.

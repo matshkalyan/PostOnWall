@@ -30,6 +30,7 @@ import android.widget.Toast;
 
 
 import com.example.iosuser11.postonwall.GL.PictureRenderer;
+import com.example.iosuser11.postonwall.GL.PictureView;
 import com.example.iosuser11.postonwall.Network.Communicator;
 import com.example.iosuser11.postonwall.Network.CommunicatorPicsArt;
 
@@ -160,7 +161,6 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View view) {
                 if(!photoChosen) {
-//                    tracking.setChecked(false);
                     chooseImage();
                 } else {
                     postImage();    //save it as an object containing its GPS coordinates, keypoints, descriptors, add that object to the list of objects
@@ -265,6 +265,8 @@ public class MainActivity extends Activity {
                     finish();
                 } else {
                     cameraPreview = new CameraPreview(getApplicationContext());
+                    camWidth = cameraPreview.getPreviewSize().width;
+                    camHeight = cameraPreview.getPreviewSize().height;
                     pre = new Mat(camHeight + camHeight/2, camWidth, CvType.CV_8UC1);
                     wallView.addView(cameraPreview);
                     gpsTracker = new GPSTracker(this);
@@ -505,6 +507,7 @@ public class MainActivity extends Activity {
     protected void onPause() {
         super.onPause();
         afterOnPause = true;
-        cameraPreview.pause();
+        if(cameraPreview != null)
+            cameraPreview.pause();
     }
 }

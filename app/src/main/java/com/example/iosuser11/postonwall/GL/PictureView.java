@@ -1,4 +1,4 @@
-package com.example.iosuser11.postonwall;
+package com.example.iosuser11.postonwall.GL;
 
 import android.content.Context;
 import android.opengl.GLSurfaceView;
