@@ -42,7 +42,6 @@ public class PictureRenderer implements GLSurfaceView.Renderer
     float[] rotationMatrix = new float[16];
     float[] matCache = new float[16];
     float[] matCacheTranspose = new float[16];
-    float[] tmp = new float[16];
 
     float[] result = new float[16];
 
@@ -92,12 +91,12 @@ public class PictureRenderer implements GLSurfaceView.Renderer
         rotationMatrix = motionSensors.getRotationMatrix();
 //        float[] translateXYZ = motionSensors.getTranslationXYZ();
 
+        multiplyMM(finalTransformMatrix, 0, projectionMatrix, 0, identMatrix, 0);
+        multiplyMM(finalTransformMatrix, 0, finalTransformMatrix, 0, viewMatrix, 0);
+        multiplyMM(finalTransformMatrix, 0, finalTransformMatrix, 0, modelMatrix, 0);
+
+
         if(pttvel && rotationMatrix != null) {
-
-            multiplyMM(finalTransformMatrix, 0, projectionMatrix, 0, identMatrix, 0);
-            multiplyMM(finalTransformMatrix, 0, finalTransformMatrix, 0, viewMatrix, 0);
-            multiplyMM(finalTransformMatrix, 0, finalTransformMatrix, 0, modelMatrix, 0);
-
             //translation due to rotation and seekbar
             transposeM(matCacheTranspose, 0, matCache, 0);
             multiplyMM(result, 0, rotationMatrix, 0, matCacheTranspose, 0);
@@ -106,18 +105,9 @@ public class PictureRenderer implements GLSurfaceView.Renderer
             //rotation
             multiplyMM(finalTransformMatrix, 0, finalTransformMatrix, 0, rotationMatrix, 0);
             multiplyMM(finalTransformMatrix, 0, finalTransformMatrix, 0, matCacheTranspose, 0);
-            //no scale
-
-
         } else if (!pttvel) {
             matCache = motionSensors.getRotationMatrix();
-
-            multiplyMM(finalTransformMatrix, 0, projectionMatrix, 0, identMatrix, 0);
-            multiplyMM(finalTransformMatrix, 0, finalTransformMatrix, 0, viewMatrix, 0);
-            multiplyMM(finalTransformMatrix, 0, finalTransformMatrix, 0, modelMatrix, 0);
             translateM(finalTransformMatrix, 0, 0, 0, -(d));
-            //no rotation
-            //no scale
         }
 
         // Draw the table.
