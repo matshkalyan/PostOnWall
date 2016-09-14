@@ -10,6 +10,8 @@ import com.example.iosuser11.postonwall.MotionSensors;
 import com.example.iosuser11.postonwall.GL.util.MatrixHelper;
 import com.example.iosuser11.postonwall.GL.util.TextureHelper;
 
+import java.util.ArrayList;
+
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
@@ -23,12 +25,7 @@ public class PictureRenderer implements GLSurfaceView.Renderer
 {
     private final Context context;
 
-    private TextureShaderProgram textureProgram;
-    private int texture;
-    private Table table;
-    private Bitmap image;
-    private float imageHeight;
-    private float imageWidth;
+    private ArrayList<Table> tableList;
 
     private final float[] identMatrix = new float[16];
     private final float[] projectionMatrix = new float[16];
@@ -46,18 +43,23 @@ public class PictureRenderer implements GLSurfaceView.Renderer
     float[] result = new float[16];
 
     private boolean pttvel = false;
+    private boolean afterelseif = false;
 
     private float d = 10;
 
+
+    private Bitmap updatedImage;
+    private Context mContext;
+    private Boolean updateImage = false;
 //    double translateX;
 //    double translateY;
 
-    public PictureRenderer(Activity activity, Bitmap image) {
+    public PictureRenderer(Activity activity) {
         this.context = activity.getApplicationContext();
         motionSensors = new MotionSensors(activity);
-        this.image = image;
-        imageHeight = (float) image.getHeight();
-        imageWidth = (float) image.getWidth();
+
+        tableList = new ArrayList<>();
+
         setIdentityM(identMatrix, 0);
         modelMatrix = identMatrix.clone();
     }
@@ -65,9 +67,6 @@ public class PictureRenderer implements GLSurfaceView.Renderer
     @Override
     public void onSurfaceCreated(GL10 glUnused, EGLConfig config) {
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-        table = new Table(imageHeight, imageWidth);
-        textureProgram = new TextureShaderProgram(context);
-        texture = TextureHelper.loadTexture(context, image);
 
     }
 
@@ -96,7 +95,7 @@ public class PictureRenderer implements GLSurfaceView.Renderer
         multiplyMM(finalTransformMatrix, 0, finalTransformMatrix, 0, modelMatrix, 0);
 
 
-        if(pttvel && rotationMatrix != null) {
+        if(afterelseif && pttvel && rotationMatrix != null) {
             //translation due to rotation and seekbar
             transposeM(matCacheTranspose, 0, matCache, 0);
             multiplyMM(result, 0, rotationMatrix, 0, matCacheTranspose, 0);
@@ -105,29 +104,33 @@ public class PictureRenderer implements GLSurfaceView.Renderer
             //rotation
             multiplyMM(finalTransformMatrix, 0, finalTransformMatrix, 0, rotationMatrix, 0);
             multiplyMM(finalTransformMatrix, 0, finalTransformMatrix, 0, matCacheTranspose, 0);
-        } else if (!pttvel) {
+        } else if (!pttvel || !afterelseif) {
             matCache = motionSensors.getRotationMatrix();
             translateM(finalTransformMatrix, 0, 0, 0, -(d));
+            afterelseif = true;
         }
 
-        // Draw the table.
-//        positionTableInScene();
-        textureProgram.useProgram();
-        textureProgram.setUniforms(finalTransformMatrix, texture);
-        table.bindData(textureProgram);
-        table.draw();
+        if(updateImage) {
+            tableList.add(new Table(mContext, updatedImage));
+            updateImage =false;
+        }
+
+        for(int i = 0; i < tableList.size(); i++) {
+            tableList.get(i).draw(finalTransformMatrix);
+        }
     }
 
     public void attachToWall() {
         pttvel = true;
     }
 
-    private void positionTableInScene() {
-        setIdentityM(modelMatrix, 0);
-        multiplyMM(modelViewProjectionMatrix, 0, viewProjectionMatrix, 0, modelMatrix, 0);
-    }
-
     public void updateDistance(int d) {
         this.d = (float) d;
+    }
+
+    public void addTable(Context c, Bitmap b) {
+        updatedImage = b;
+        mContext = c;
+        updateImage = true;
     }
 }

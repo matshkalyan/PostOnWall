@@ -31,6 +31,7 @@ import android.widget.Toast;
 
 import com.example.iosuser11.postonwall.GL.PictureRenderer;
 import com.example.iosuser11.postonwall.GL.PictureView;
+import com.example.iosuser11.postonwall.GL.Table;
 import com.example.iosuser11.postonwall.Network.Communicator;
 import com.example.iosuser11.postonwall.Network.CommunicatorPicsArt;
 
@@ -56,8 +57,8 @@ import java.util.List;
 public class MainActivity extends Activity {
 
     public static ArrayList<PictureObject> allPicturesList;     //all of the pictures posted via this app, must be in the server in future
-    public ArrayList<PictureObject> nearbyPicturesList;      //pictures posted nearby, is reinitialized ever time we enable tracking
-    public ArrayList<PicViewAndRend> currentPicturesList;     //pictures currently being tracked, is reinitialized ever time we enable tracking
+    public ArrayList<PictureObject> nearbyPicturesList;      //pictures posted nearby, is reinitialized every time we enable tracking
+//    public ArrayList<PicViewAndRend> currentPicturesList;     //pictures currently being tracked, is reinitialized ever time we enable tracking
     public ArrayList currentPicturesIndexesList;     //indexes of the pictures currently being tracked in the list of the nearbyPicturesList, is reinitialized ever time we enable tracking
 
     //UI stuff
@@ -65,13 +66,15 @@ public class MainActivity extends Activity {
     private CameraPreview cameraPreview;
     private int camWidth;
     private int camHeight;
-    private PictureView pictureView;
-    private PictureRenderer pictureRenderer;
     private Button post;
     private Button cancel;
     private Switch tracking;
     private SeekBar seekBar;
     private TextView messages;
+    private PictureView sceneView;
+    private PictureRenderer sceneRenderer;
+    private PictureView previewView;
+    private PictureRenderer previewRenderer;
 
     //Image processing stuff
     Mat imgCurrent;
@@ -165,13 +168,12 @@ public class MainActivity extends Activity {
                 } else {
                     postImage();    //save it as an object containing its GPS coordinates, keypoints, descriptors, add that object to the list of objects
 
-                    wallView.removeView(pictureView);
+                    wallView.removeView(previewView);
                     tracking.setChecked(true);
 
                     post.setText("CHOOSE IMAGE");
                     photoChosen = false;
                     seekBar.setVisibility(View.GONE);
-                    pictureRenderer.attachToWall();
                 }
             }
         });
@@ -179,7 +181,7 @@ public class MainActivity extends Activity {
         cancel.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                wallView.removeView(pictureView);
+                wallView.removeView(previewView);
                 photoChosen = false;
                 post.setText("CHOOSE IMAGE");
                 cancel.setVisibility(View.GONE);
@@ -192,7 +194,15 @@ public class MainActivity extends Activity {
             public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                 if(isChecked) {     //we enabled tracking
                     findImagesNearby();
-                    currentPicturesList = new ArrayList<>();
+                    sceneView = new PictureView(getApplicationContext(), camWidth, camHeight);
+                    sceneView.setEGLContextClientVersion(2);
+                    sceneView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
+                    sceneView.setEGLConfigChooser(8,8,8,8,0,0);
+                    sceneView.setZOrderOnTop(true);
+                    sceneRenderer = new PictureRenderer(MainActivity.this);
+                    sceneView.setRenderer(sceneRenderer);
+                    wallView.addView(sceneView);
+                    sceneRenderer.attachToWall();
                     currentPicturesIndexesList = new ArrayList();
                     messages.setVisibility(View.VISIBLE);
                     trackingState = true;
@@ -205,9 +215,7 @@ public class MainActivity extends Activity {
                     }.execute();
                 } else {        //we disabled tracking
                     trackingState = false;
-                    for(int i = 0; i<currentPicturesList.size(); i++) {
-                        wallView.removeView(currentPicturesList.get(i).getView());
-                    }
+                    wallView.removeView(sceneView);
                     messages.setVisibility(View.GONE);
                     imageFound = false;
                 }
@@ -217,7 +225,7 @@ public class MainActivity extends Activity {
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
-                pictureRenderer.updateDistance(18 - i);
+                previewRenderer.updateDistance(18 - i);
             }
 
             @Override
@@ -304,15 +312,16 @@ public class MainActivity extends Activity {
                     } catch (FileNotFoundException e) {
                         e.printStackTrace();
                     }
-                    pictureView = new PictureView(getApplicationContext(), camWidth, camHeight);
-                    pictureView.setEGLContextClientVersion(2);
-                    pictureView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
-                    pictureView.setEGLConfigChooser(8,8,8,8,0,0);
-                    pictureView.setZOrderOnTop(true);
-                    pictureRenderer = new PictureRenderer(this, selectedPicture);
-                    pictureView.setRenderer(pictureRenderer);
-                    wallView.addView(pictureView);
-                    pictureView.bringToFront();
+                    previewView = new PictureView(getApplicationContext(), camWidth, camHeight);
+                    previewView.setEGLContextClientVersion(2);
+                    previewView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
+                    previewView.setEGLConfigChooser(8,8,8,8,0,0);
+                    previewView.setZOrderOnTop(true);
+                    previewRenderer = new PictureRenderer(this);
+                    previewRenderer.addTable(getApplicationContext(), selectedPicture);
+                    previewView.setRenderer(previewRenderer);
+                    wallView.addView(previewView);
+                    previewView.bringToFront();
                 }
         }
     }
@@ -389,53 +398,53 @@ public class MainActivity extends Activity {
         }
     }
 
-    void trackCurrentPictures() {
-        //do image processing to translate the pictures currently being previewed
-        //match previous and current keypoints
-        //match current frame with the previous frame to compute homography and update all of the picures in the currentPicturesList
-        if(currentPicturesList.size() > 0) {
-            successiveMatches = new MatOfDMatch();
-            matcher.match(descriptorsCurrent, descriptorsPrevious, successiveMatches);
-            List<DMatch> matchesList2 = successiveMatches.toList();
-            List<DMatch> matches_final2 = new ArrayList<>();
-            for(int j = 0; j < matchesList2.size(); j++) {
-                if (matchesList2.get(j).distance <= 40) {
-                    matches_final2.add(successiveMatches.toList().get(j));
-                }
-            }
-            List<Point> objpoints = new ArrayList<>();
-            List<Point> scenepoints = new ArrayList<>();
-            for(int i=0; i < matches_final2.size(); i++) {
-                objpoints.add(keypointsPrevious.toList().get((matches_final2.get(i)).queryIdx).pt);
-                scenepoints.add(keypointsCurrent.toList().get((matches_final2.get(i)).trainIdx).pt);
-            }
-            int sumDistX = 0;
-            int sumDistY = 0;
-            for(int i=0; i < matches_final2.size(); i++) {
-                sumDistX += - objpoints.get(i).x + scenepoints.get(i).x;
-                sumDistY += - objpoints.get(i).x + scenepoints.get(i).x;
-            }
-            for(int i = 0; i < currentPicturesList.size(); i++) {
-                currentPicturesList.get(i).getView().setTranslationX(sumDistX / matches_final2.size());
-//                    currentPicturesList.get(i).getView().setTranslationY(sumDistY / matches_final2.size());
-            }
-
-
-//            MatOfPoint2f obj = new MatOfPoint2f();
-//            obj.fromList(objpoints);
-//            MatOfPoint2f scene = new MatOfPoint2f();
-//            scene.fromList(scenepoints);
-//            Mat homography = Calib3d.findHomography(obj, scene, Calib3d.RANSAC, 2);
-//            Log.d("", "translation is: " + homography.get(0, 2)[0] + homography.get(1, 2)[0]);
-//            for(int i = 0; i < currentPicturesList.size(); i++) {
-////                currentPicturesList.get(i).getRenderer().setTranslation(homography.get(0, 2)[0], homography.get(1, 2)[0]);
-//                    currentPicturesList.get(i).getView().setTranslationX(1 * (float) homography.get(0, 2)[0]);
-//                    currentPicturesList.get(i).getView().setTranslationY(1 * (float) homography.get(1, 2)[0]);
+//    void trackCurrentPictures() {
+//        //do image processing to translate the pictures currently being previewed
+//        //match previous and current keypoints
+//        //match current frame with the previous frame to compute homography and update all of the picures in the currentPicturesList
+//        if(currentPicturesList.size() > 0) {
+//            successiveMatches = new MatOfDMatch();
+//            matcher.match(descriptorsCurrent, descriptorsPrevious, successiveMatches);
+//            List<DMatch> matchesList2 = successiveMatches.toList();
+//            List<DMatch> matches_final2 = new ArrayList<>();
+//            for(int j = 0; j < matchesList2.size(); j++) {
+//                if (matchesList2.get(j).distance <= 40) {
+//                    matches_final2.add(successiveMatches.toList().get(j));
+//                }
 //            }
-
-        }
-
-    }
+//            List<Point> objpoints = new ArrayList<>();
+//            List<Point> scenepoints = new ArrayList<>();
+//            for(int i=0; i < matches_final2.size(); i++) {
+//                objpoints.add(keypointsPrevious.toList().get((matches_final2.get(i)).queryIdx).pt);
+//                scenepoints.add(keypointsCurrent.toList().get((matches_final2.get(i)).trainIdx).pt);
+//            }
+//            int sumDistX = 0;
+//            int sumDistY = 0;
+//            for(int i=0; i < matches_final2.size(); i++) {
+//                sumDistX += - objpoints.get(i).x + scenepoints.get(i).x;
+//                sumDistY += - objpoints.get(i).x + scenepoints.get(i).x;
+//            }
+//            for(int i = 0; i < currentPicturesList.size(); i++) {
+//                currentPicturesList.get(i).getView().setTranslationX(sumDistX / matches_final2.size());
+////                    currentPicturesList.get(i).getView().setTranslationY(sumDistY / matches_final2.size());
+//            }
+//
+//
+////            MatOfPoint2f obj = new MatOfPoint2f();
+////            obj.fromList(objpoints);
+////            MatOfPoint2f scene = new MatOfPoint2f();
+////            scene.fromList(scenepoints);
+////            Mat homography = Calib3d.findHomography(obj, scene, Calib3d.RANSAC, 2);
+////            Log.d("", "translation is: " + homography.get(0, 2)[0] + homography.get(1, 2)[0]);
+////            for(int i = 0; i < currentPicturesList.size(); i++) {
+//////                currentPicturesList.get(i).getRenderer().setTranslation(homography.get(0, 2)[0], homography.get(1, 2)[0]);
+////                    currentPicturesList.get(i).getView().setTranslationX(1 * (float) homography.get(0, 2)[0]);
+////                    currentPicturesList.get(i).getView().setTranslationY(1 * (float) homography.get(1, 2)[0]);
+////            }
+//
+//        }
+//
+//    }
 
     void findPictureOnCurrentWall() {
         Mat descriptorsOriginal;
@@ -451,21 +460,17 @@ public class MainActivity extends Activity {
                 }
             }
             if (matches_final.size() > 150) {
-                imageFound = true;
                 currentPictureIndex = i;
             }
-            if(imageFound && !pictureIsViewed(currentPictureIndex)) {
+            if(!pictureIsViewed(currentPictureIndex)) {
                 currentPicturesIndexesList.add(currentPictureIndex);
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        newTrackedPictureView(nearbyPicturesList.get(currentPictureIndex).getPicture());
-                        currentPicturesList.get(currentPicturesList.size() - 1).getRenderer().updateDistance(18 - nearbyPicturesList.get(currentPictureIndex).getScale());
+                        sceneRenderer.addTable(getApplicationContext(), nearbyPicturesList.get(currentPictureIndex).getPicture());
                     }
                 });
             }
-            if(newPictureAdded)
-                currentPicturesList.get(currentPicturesList.size() - 1).getRenderer().attachToWall();
         }
         imageFound = false;
         newPictureAdded = false;
@@ -477,22 +482,6 @@ public class MainActivity extends Activity {
                 return true;
         }
         return false;
-    }
-
-    void newTrackedPictureView(Bitmap image) {
-        PictureView pView = new PictureView(getApplicationContext(), camWidth, camHeight);
-        pView.setEGLContextClientVersion(2);
-        pView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
-        pView.setEGLConfigChooser(8,8,8,8,0,0);
-        pView.setZOrderMediaOverlay(true);
-        PictureRenderer pRenderer = new PictureRenderer(this, image);
-        pView.setRenderer(pRenderer);
-        wallView.addView(pView);
-        pView.bringToFront();
-
-        PicViewAndRend picViewAndRend = new PicViewAndRend(pView, pRenderer);
-        currentPicturesList.add(picViewAndRend);
-        newPictureAdded = true;
     }
 
     @Override

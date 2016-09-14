@@ -1,5 +1,10 @@
 package com.example.iosuser11.postonwall.GL;
 
+import android.content.Context;
+import android.graphics.Bitmap;
+
+import com.example.iosuser11.postonwall.GL.util.TextureHelper;
+
 import static android.opengl.GLES20.GL_TRIANGLE_FAN;
 import static android.opengl.GLES20.glDrawArrays;
 
@@ -12,8 +17,20 @@ public class Table {
 
     private final VertexArray vertexArray;
 
-    public Table(float height, float width)
+    private Bitmap bitmap;
+    private TextureShaderProgram textureProgram;
+    private int texture;
+
+    private Context context;
+
+    public Table(Context c, Bitmap b)
     {
+        context = c;
+
+        bitmap = b;
+        float width = b.getWidth();
+        float height = b.getHeight();
+
         final float[] VERTEX_DATA = {
                 // Order of coordinates:
                 // X,            Y,                       S,     T
@@ -26,6 +43,12 @@ public class Table {
         };
 
         vertexArray = new VertexArray(VERTEX_DATA);
+
+        textureProgram = new TextureShaderProgram(context);
+        texture = TextureHelper.loadTexture(context, bitmap);
+        textureProgram.useProgram();
+
+
     }
 
     public void bindData(TextureShaderProgram textureProgram) {
@@ -33,8 +56,10 @@ public class Table {
         vertexArray.setVertexAttribPointer(POSITION_COMPONENT_COUNT, textureProgram.getTextureCoordinatesAttributeLocation(), TEXTURE_COORDINATES_COMPONENT_COUNT, STRIDE);
     }
 
-    public void draw()
-    {
+    public void draw(float[] finalTransformMatrix) {
+        textureProgram.useProgram();
+        textureProgram.setUniforms(finalTransformMatrix, texture);
+        bindData(textureProgram);
         glDrawArrays(GL_TRIANGLE_FAN, 0, 6);
     }
 }
